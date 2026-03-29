@@ -18,7 +18,7 @@ Plugin dependency resolver for Claude Code. Detects environment, resolves capabi
 
 - `probes.py` — 8 generic environment detection primitives
 - `registry.py` — reads marketplace, installed plugins, capability contracts
-- `contracts.py` — validates providers against capability schemas (phase 1: name-level)
+- `contracts.py` — validates providers against capability contracts (declaration + grants check)
 - `resolver.py` — dependency diff engine, provider ranking, install plan generation
 - `server.py` — FastMCP server exposing 7 MCP tools
 
@@ -44,3 +44,19 @@ Install as plugin:
 ```bash
 claude --plugin-dir /home/thatcher/projects/nov/projects/plugins/nov-hub
 ```
+
+## Capability System
+
+Plugins declare dependencies on capabilities — semantic contracts that providers satisfy.
+
+**How it works:** A plugin's marketplace.json entry has `requires: ["notification"]`. nov-hub's `check_dependencies` reads this, finds providers that have `provides: ["notification"]`, runs environment probes against each provider's `environment` conditions, and auto-selects the best match.
+
+**Contracts are semantic, not signatures.** Capability contracts describe behavior (input, output, determinism guarantees) and hint registries. They do NOT mandate specific tool names. Providers implement the capability with whatever tool names make sense. Claude handles routing at runtime based on available tools and the contract description.
+
+**Marketplace fields per plugin:** `requires`, `optional`, `provides`, `built_in_capabilities`, `environment` (probe conditions for auto-selection).
+
+**Adding a new capability:** Create `capabilities/<name>.json` in the marketplace repo with behavior description and hints. Create a provider plugin, add it to marketplace.json with `provides` and `environment`. Resolver picks it up automatically.
+
+**Consumer skills use intent, not tool names.** Instead of hardcoding `send_notification(...)`, consumer skills say "Use the notification capability to alert the user with message X and urgency Y." Claude figures out which installed tool satisfies the capability and calls it.
+
+**Probes are generic** — never plugin-specific. They check: os, shell, binary in PATH, TCP port, env var, MCP server, installed plugin, file exists. New providers = marketplace metadata only.

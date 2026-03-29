@@ -53,8 +53,8 @@ def marketplace_json(mock_home):
             {
                 "name": "notify-linux",
                 "source": {"source": "github", "repo": "ThatcherT/notify-linux"},
-                "description": "Linux desktop + phone notifications",
-                "version": "1.0.0",
+                "description": "Linux desktop notifications",
+                "version": "2.0.0",
                 "requires": [],
                 "optional": [],
                 "provides": ["notification"],
@@ -94,21 +94,19 @@ def notification_contract(mock_home):
     data = {
         "name": "notification",
         "description": "Alert the user through one or more channels",
-        "version": "1.0.0",
-        "tools": [
-            {
-                "name": "send_notification",
-                "description": "Send a notification to the user",
-                "parameters": {
-                    "message": {"type": "string", "required": True},
-                    "urgency": {
-                        "type": "string",
-                        "required": True,
-                        "enum": ["low", "normal", "critical"],
-                    },
-                },
-            }
-        ],
+        "version": "3.0.0",
+        "behavior": {
+            "input": "A message string and optional hints dict",
+            "output": "Confirmation of delivery with channel details and success/failure status",
+            "deterministic": "Delivery must succeed or return explicit failure",
+        },
+        "hints": {
+            "urgency": {
+                "type": "string",
+                "enum": ["low", "normal", "critical"],
+                "default": "normal",
+            },
+        },
     }
     cap_path.write_text(json.dumps(data))
     return data
@@ -117,7 +115,7 @@ def notification_contract(mock_home):
 @pytest.fixture
 def installed_plugins(mock_home):
     """Write an installed_plugins.json with notify-linux installed."""
-    install_path = mock_home / ".claude" / "plugins" / "cache" / "nov-plugins" / "notify-linux" / "1.0.0"
+    install_path = mock_home / ".claude" / "plugins" / "cache" / "nov-plugins" / "notify-linux" / "2.0.0"
     install_path.mkdir(parents=True)
     plugin_dir = install_path / ".claude-plugin"
     plugin_dir.mkdir()
@@ -133,7 +131,7 @@ def installed_plugins(mock_home):
                 {
                     "scope": "user",
                     "installPath": str(install_path),
-                    "version": "1.0.0",
+                    "version": "2.0.0",
                 }
             ]
         },

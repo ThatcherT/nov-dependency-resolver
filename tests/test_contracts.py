@@ -1,4 +1,4 @@
-"""Tests for contracts.py — provider validation against capability schemas."""
+"""Tests for contracts.py — provider validation against capability contracts."""
 
 import os
 import sys
@@ -43,6 +43,5 @@ def test_validate_all_providers(mock_home, marketplace_json, notification_contra
     names = [r["plugin"] for r in results]
     assert "notify-linux" in names
     assert "notify-macos" in names
-    # Both should be valid (they declare the capability)
     for r in results:
         assert r["valid"] is True

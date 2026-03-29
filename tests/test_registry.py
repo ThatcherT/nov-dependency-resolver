@@ -64,8 +64,8 @@ def test_get_capability_contract(mock_home, notification_contract):
     contract = registry.get_capability_contract("notification")
     assert contract is not None
     assert contract["name"] == "notification"
-    assert len(contract["tools"]) == 1
-    assert contract["tools"][0]["name"] == "send_notification"
+    assert "behavior" in contract
+    assert "hints" in contract
 
 
 def test_get_capability_contract_missing(mock_home):

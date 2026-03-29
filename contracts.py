@@ -1,18 +1,19 @@
-"""Contract validation for nov-hub — validates providers against capability schemas.
+"""Contract validation for nov-hub — validates providers against capability contracts.
 
-Phase 1: name-level validation only (checks tool names exist).
-Full runtime schema validation deferred to later phases.
+Contracts are semantic — they describe behavior, not tool signatures.
+Validation checks that providers declare the capability and a contract exists.
+Claude handles tool routing at runtime based on available tools.
 """
 
 import registry
 
 
 def validate_provider(plugin_name: str, capability: str, marketplace: str = "nov-plugins") -> dict:
-    """Validate that a provider implements a capability contract.
+    """Validate that a provider can satisfy a capability contract.
 
-    Phase 1 checks:
+    Checks:
     - Provider declares the capability in 'provides'
-    - Provider's MCP server declares tools matching the contract's required tool names
+    - A capability contract exists
 
     Args:
         plugin_name: Name of the provider plugin
@@ -23,7 +24,6 @@ def validate_provider(plugin_name: str, capability: str, marketplace: str = "nov
             "valid": bool,
             "capability": str,
             "plugin": str,
-            "missing_tools": list[str],
             "errors": list[str]
         }
     """
@@ -31,7 +31,6 @@ def validate_provider(plugin_name: str, capability: str, marketplace: str = "nov
         "valid": False,
         "capability": capability,
         "plugin": plugin_name,
-        "missing_tools": [],
         "errors": [],
     }
 
@@ -53,12 +52,6 @@ def validate_provider(plugin_name: str, capability: str, marketplace: str = "nov
             f"Plugin '{plugin_name}' does not declare '{capability}' in provides"
         )
         return result
-
-    # Phase 1: name-level tool check
-    required_tools = [tool["name"] for tool in contract.get("tools", [])]
-    # We can't inspect MCP tools at validation time without running the server,
-    # so phase 1 just verifies the contract exists and the plugin claims the capability.
-    # Full tool-level validation would require runtime introspection.
 
     result["valid"] = True
     return result

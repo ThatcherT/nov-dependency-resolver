@@ -61,7 +61,7 @@ def detect_environment() -> dict:
 def list_capabilities() -> list[dict]:
     """List all capability contracts available in the marketplace.
 
-    Returns the full contract definitions including required tool signatures.
+    Returns the full contract definitions including behavior descriptions and hints.
     """
     return registry.list_capability_contracts()
 

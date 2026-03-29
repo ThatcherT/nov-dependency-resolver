@@ -59,4 +59,6 @@ Plugins declare dependencies on capabilities — semantic contracts that provide
 
 **Consumer skills use intent, not tool names.** Instead of hardcoding `send_notification(...)`, consumer skills say "Use the notification capability to alert the user with message X and urgency Y." Claude figures out which installed tool satisfies the capability and calls it.
 
+**Dependency preamble — dual discovery.** When a consumer skill checks for missing capabilities, it should present two paths: (1) marketplace providers via `get_install_plan`, and (2) any MCP tools already in Claude's context that could satisfy the capability (e.g., a Gmail MCP satisfying notification). The user chooses, then the skill smoke tests the solution before proceeding.
+
 **Probes are generic** — never plugin-specific. They check: os, shell, binary in PATH, TCP port, env var, MCP server, installed plugin, file exists. New providers = marketplace metadata only.

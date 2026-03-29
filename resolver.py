@@ -1,0 +1,200 @@
+"""Dependency resolver for nov-hub — the core diff engine.
+
+Computes what a plugin needs, what's satisfied, what's missing,
+and auto-selects providers based on environment probes.
+"""
+
+import probes
+import registry
+
+
+def check_dependencies(plugin_name: str, marketplace: str = "nov-plugins") -> dict:
+    """Check which dependencies a plugin has and their satisfaction status.
+
+    Returns:
+        {
+            "plugin": str,
+            "satisfied": list[str],     — capabilities that are met
+            "missing": list[str],       — required capabilities without a provider
+            "optional_missing": list[str] — optional capabilities without a provider
+        }
+    """
+    plugin = registry.find_marketplace_plugin(plugin_name, marketplace)
+    if not plugin:
+        return {
+            "plugin": plugin_name,
+            "error": f"Plugin '{plugin_name}' not found in marketplace",
+            "satisfied": [],
+            "missing": [],
+            "optional_missing": [],
+        }
+
+    requires = plugin.get("requires", [])
+    optional = plugin.get("optional", [])
+    built_in = plugin.get("built_in_capabilities", [])
+
+    satisfied = list(built_in)
+    missing = []
+    optional_missing = []
+
+    for cap in requires:
+        if cap in built_in:
+            continue
+        elif _has_installed_provider(cap, marketplace):
+            satisfied.append(cap)
+        else:
+            missing.append(cap)
+
+    for cap in optional:
+        if cap in built_in:
+            continue
+        elif _has_installed_provider(cap, marketplace):
+            satisfied.append(cap)
+        else:
+            optional_missing.append(cap)
+
+    return {
+        "plugin": plugin_name,
+        "satisfied": satisfied,
+        "missing": missing,
+        "optional_missing": optional_missing,
+    }
+
+
+def resolve(capability: str, marketplace: str = "nov-plugins") -> list[dict]:
+    """Find and rank providers for a capability based on environment match.
+
+    Returns:
+        List of providers sorted by match quality (best first). Each entry:
+        {
+            "name": str,
+            "match": bool,          — all environment conditions met
+            "match_details": dict,  — per-condition results
+            "installed": bool
+        }
+    """
+    providers = registry.get_providers(capability, marketplace)
+    if not providers:
+        return []
+
+    # Gather environment requirements from all candidates
+    env_reqs = [p.get("environment", {}) for p in providers if p.get("environment")]
+    facts = probes.gather_facts(env_reqs)
+
+    ranked = []
+    for provider in providers:
+        env = provider.get("environment", {})
+        match_details = {}
+        all_match = True
+
+        for key, value in env.items():
+            fact_key = f"{key}:{value}"
+            matched = facts.get(fact_key, False)
+            match_details[fact_key] = matched
+            if not matched:
+                all_match = False
+
+        # No environment requirements = universal match
+        if not env:
+            all_match = True
+
+        ranked.append({
+            "name": provider["name"],
+            "description": provider.get("description", ""),
+            "version": provider.get("version", ""),
+            "match": all_match,
+            "match_details": match_details,
+            "installed": registry.is_plugin_installed(provider["name"]),
+        })
+
+    # Sort: matched first, then installed first
+    ranked.sort(key=lambda p: (not p["match"], not p["installed"]))
+    return ranked
+
+
+def get_install_plan(plugin_name: str, marketplace: str = "nov-plugins") -> dict:
+    """Generate an ordered install plan for a plugin and its dependencies.
+
+    Auto-selects the best provider for each missing capability.
+
+    Returns:
+        {
+            "plugin": str,
+            "install_order": list[dict],  — ordered list of what to install
+            "already_satisfied": list[str],
+            "no_provider_available": list[str],  — capabilities with no matching provider
+        }
+    """
+    deps = check_dependencies(plugin_name, marketplace)
+    if "error" in deps:
+        return {"plugin": plugin_name, "error": deps["error"], "install_order": []}
+
+    install_order = []
+    no_provider = []
+    already_satisfied = deps["satisfied"]
+
+    for cap in deps["missing"] + deps["optional_missing"]:
+        providers = resolve(cap, marketplace)
+        matched = [p for p in providers if p["match"] and not p["installed"]]
+
+        if matched:
+            best = matched[0]
+            install_order.append({
+                "plugin": best["name"],
+                "capability": cap,
+                "reason": f"Provides '{cap}' — best environment match",
+                "required": cap in deps["missing"],
+            })
+        elif not any(p["installed"] for p in providers):
+            no_provider.append(cap)
+
+    return {
+        "plugin": plugin_name,
+        "install_order": install_order,
+        "already_satisfied": already_satisfied,
+        "no_provider_available": no_provider,
+    }
+
+
+def verify(plugin_name: str, marketplace: str = "nov-plugins") -> dict:
+    """Verify a plugin's dependencies are all satisfied.
+
+    Returns:
+        {
+            "plugin": str,
+            "passed": bool,
+            "details": dict  — from check_dependencies
+        }
+    """
+    deps = check_dependencies(plugin_name, marketplace)
+    passed = len(deps.get("missing", [])) == 0
+    return {
+        "plugin": plugin_name,
+        "passed": passed,
+        "details": deps,
+    }
+
+
+def detect_environment() -> dict:
+    """Run all probes and return a full environment snapshot.
+
+    Returns:
+        Dict with all detected facts about the current environment.
+    """
+    return {
+        "os": probes.probe_os(),
+        "shell": probes.probe_shell(),
+        "common_binaries": {
+            name: probes.probe_binary(name)
+            for name in [
+                "notify-send", "docker", "nginx", "cloudflared", "gh",
+                "python", "node", "npm", "pip", "git", "curl",
+            ]
+        },
+    }
+
+
+def _has_installed_provider(capability: str, marketplace: str) -> bool:
+    """Check if any installed plugin provides a capability."""
+    providers = registry.get_providers(capability, marketplace)
+    return any(registry.is_plugin_installed(p["name"]) for p in providers)

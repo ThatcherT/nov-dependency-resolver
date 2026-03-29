@@ -1,0 +1,109 @@
+"""Tests for resolver.py — dependency diff engine."""
+
+import os
+import sys
+
+import pytest
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+import resolver
+
+
+def test_check_dependencies_missing(mock_home, marketplace_json):
+    """Cardwatch requires notification, nothing installed — should be missing."""
+    result = resolver.check_dependencies("cardwatch")
+    assert result["plugin"] == "cardwatch"
+    assert "notification" in result["missing"]
+    assert "scheduling" in result["optional_missing"]
+    assert result["satisfied"] == []
+
+
+def test_check_dependencies_satisfied(mock_home, marketplace_json, installed_plugins):
+    """Cardwatch with notify-linux installed — notification should be satisfied."""
+    result = resolver.check_dependencies("cardwatch")
+    assert "notification" in result["satisfied"]
+    assert result["missing"] == []
+    assert "scheduling" in result["optional_missing"]
+
+
+def test_check_dependencies_built_in(mock_home, marketplace_json):
+    """Liteframe has built_in_capabilities — should be satisfied."""
+    result = resolver.check_dependencies("liteframe")
+    assert "static-site-build" in result["satisfied"]
+    assert result["missing"] == []
+
+
+def test_check_dependencies_not_found(mock_home, marketplace_json):
+    result = resolver.check_dependencies("nonexistent")
+    assert "error" in result
+
+
+def test_resolve_notification(mock_home, marketplace_json, monkeypatch):
+    """Should rank notify-linux higher on linux."""
+    import probes
+    monkeypatch.setattr(probes, "probe_os", lambda: "linux")
+    monkeypatch.setattr(probes, "probe_binary", lambda name: name == "notify-send")
+
+    providers = resolver.resolve("notification")
+    assert len(providers) == 2
+    # notify-linux should match on linux
+    linux = next(p for p in providers if p["name"] == "notify-linux")
+    macos = next(p for p in providers if p["name"] == "notify-macos")
+    assert linux["match"] is True
+    assert macos["match"] is False
+    # Matched should sort first
+    assert providers[0]["name"] == "notify-linux"
+
+
+def test_resolve_no_providers(mock_home, marketplace_json):
+    result = resolver.resolve("nonexistent")
+    assert result == []
+
+
+def test_get_install_plan(mock_home, marketplace_json, monkeypatch):
+    """Should auto-select notify-linux on linux."""
+    import probes
+    monkeypatch.setattr(probes, "probe_os", lambda: "linux")
+    monkeypatch.setattr(probes, "probe_binary", lambda name: name == "notify-send")
+
+    plan = resolver.get_install_plan("cardwatch")
+    assert plan["plugin"] == "cardwatch"
+    assert len(plan["install_order"]) >= 1
+    first = plan["install_order"][0]
+    assert first["plugin"] == "notify-linux"
+    assert first["capability"] == "notification"
+    assert first["required"] is True
+
+
+def test_get_install_plan_already_satisfied(mock_home, marketplace_json, installed_plugins):
+    """With notify-linux installed, notification should be in already_satisfied."""
+    plan = resolver.get_install_plan("cardwatch")
+    assert "notification" in plan["already_satisfied"]
+    # No install needed for notification
+    notification_installs = [i for i in plan["install_order"] if i["capability"] == "notification"]
+    assert len(notification_installs) == 0
+
+
+def test_get_install_plan_not_found(mock_home, marketplace_json):
+    plan = resolver.get_install_plan("nonexistent")
+    assert "error" in plan
+
+
+def test_verify_pass(mock_home, marketplace_json, installed_plugins):
+    result = resolver.verify("cardwatch")
+    assert result["passed"] is True
+
+
+def test_verify_fail(mock_home, marketplace_json):
+    result = resolver.verify("cardwatch")
+    assert result["passed"] is False
+    assert "notification" in result["details"]["missing"]
+
+
+def test_detect_environment():
+    env = resolver.detect_environment()
+    assert "os" in env
+    assert "shell" in env
+    assert "common_binaries" in env
+    assert isinstance(env["common_binaries"], dict)

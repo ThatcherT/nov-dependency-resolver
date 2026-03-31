@@ -1,16 +1,16 @@
 {
-  "name": "nov-hub",
+  "name": "nov-dependency-resolver",
   "description": "Plugin dependency resolver — detects environment, resolves capabilities, auto-selects providers, generates install plans",
   "version": "1.0.0",
   "author": {
     "name": "Thatcher",
     "url": "https://github.com/ThatcherT"
   },
-  "repository": "https://github.com/ThatcherT/nov-hub",
+  "repository": "https://github.com/ThatcherT/nov-dependency-resolver",
   "license": "MIT",
   "keywords": ["dependencies", "resolver", "capabilities", "framework", "environment"],
   "mcpServers": {
-    "nov-hub": {
+    "nov-dependency-resolver": {
       "command": "python",
       "args": ["${CLAUDE_PLUGIN_ROOT}/server.py"],
       "cwd": "${CLAUDE_PLUGIN_ROOT}"

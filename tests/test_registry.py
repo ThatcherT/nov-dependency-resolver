@@ -17,12 +17,12 @@ def test_get_installed_plugins_empty(mock_home):
 
 def test_get_installed_plugins(mock_home, installed_plugins):
     result = registry.get_installed_plugins()
-    assert "notify-linux@nov-plugins" in result
+    assert "notify-linux@claude-plugins-nov" in result
 
 
 def test_get_marketplace_plugins(mock_home, marketplace_json):
     plugins = registry.get_marketplace_plugins()
-    assert len(plugins) == 4
+    assert len(plugins) == 8
     names = [p["name"] for p in plugins]
     assert "cardwatch" in names
     assert "notify-linux" in names
@@ -79,20 +79,20 @@ def test_list_capability_contracts(mock_home, notification_contract):
 
 
 def test_get_plugin_manifest(mock_home, installed_plugins):
-    manifest = registry.get_plugin_manifest("notify-linux@nov-plugins")
+    manifest = registry.get_plugin_manifest("notify-linux@claude-plugins-nov")
     assert manifest is not None
     assert manifest["name"] == "notify-linux"
     assert "notify-linux" in manifest["mcpServers"]
 
 
 def test_get_plugin_manifest_missing(mock_home):
-    assert registry.get_plugin_manifest("nonexistent@nov-plugins") is None
+    assert registry.get_plugin_manifest("nonexistent@claude-plugins-nov") is None
 
 
 def test_get_enabled_plugins(mock_home):
     settings_path = mock_home / ".claude" / "settings.json"
     settings_path.write_text(json.dumps({
-        "enabledPlugins": {"liteframe@nov-plugins": True}
+        "enabledPlugins": {"liteframe@claude-plugins-nov": True}
     }))
     result = registry.get_enabled_plugins()
-    assert result == {"liteframe@nov-plugins": True}
+    assert result == {"liteframe@claude-plugins-nov": True}

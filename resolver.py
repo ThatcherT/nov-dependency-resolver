@@ -1,4 +1,4 @@
-"""Dependency resolver for nov-hub — the core diff engine.
+"""Dependency resolver for nov-dependency-resolver — the core diff engine.
 
 Computes what a plugin needs, what's satisfied, what's missing,
 and auto-selects providers based on environment probes.
@@ -8,7 +8,7 @@ import probes
 import registry
 
 
-def check_dependencies(plugin_name: str, marketplace: str = "nov-plugins") -> dict:
+def check_dependencies(plugin_name: str, marketplace: str = "claude-plugins-nov") -> dict:
     """Check which dependencies a plugin has and their satisfaction status.
 
     Returns:
@@ -61,7 +61,7 @@ def check_dependencies(plugin_name: str, marketplace: str = "nov-plugins") -> di
     }
 
 
-def resolve(capability: str, marketplace: str = "nov-plugins") -> list[dict]:
+def resolve(capability: str, marketplace: str = "claude-plugins-nov") -> list[dict]:
     """Find and rank providers for a capability based on environment match.
 
     Returns:
@@ -88,11 +88,18 @@ def resolve(capability: str, marketplace: str = "nov-plugins") -> list[dict]:
         all_match = True
 
         for key, value in env.items():
-            fact_key = f"{key}:{value}"
-            matched = facts.get(fact_key, False)
-            match_details[fact_key] = matched
-            if not matched:
-                all_match = False
+            # List values match if any individual value matches
+            if isinstance(value, list):
+                any_matched = any(facts.get(f"{key}:{v}", False) for v in value)
+                match_details[key] = any_matched
+                if not any_matched:
+                    all_match = False
+            else:
+                fact_key = f"{key}:{value}"
+                matched = facts.get(fact_key, False)
+                match_details[fact_key] = matched
+                if not matched:
+                    all_match = False
 
         # No environment requirements = universal match
         if not env:
@@ -112,10 +119,12 @@ def resolve(capability: str, marketplace: str = "nov-plugins") -> list[dict]:
     return ranked
 
 
-def get_install_plan(plugin_name: str, marketplace: str = "nov-plugins") -> dict:
+def get_install_plan(plugin_name: str, marketplace: str = "claude-plugins-nov") -> dict:
     """Generate an ordered install plan for a plugin and its dependencies.
 
     Auto-selects the best provider for each missing capability.
+    Transitively resolves dependencies of selected providers.
+    Install order is topologically sorted — dependencies before dependents.
 
     Returns:
         {
@@ -131,22 +140,53 @@ def get_install_plan(plugin_name: str, marketplace: str = "nov-plugins") -> dict
 
     install_order = []
     no_provider = []
-    already_satisfied = deps["satisfied"]
+    already_satisfied = list(deps["satisfied"])
+    # Track plugins already planned for install to avoid duplicates
+    planned = set()
+    # Track resolution stack for cycle detection
+    resolving = set()
 
-    for cap in deps["missing"] + deps["optional_missing"]:
-        providers = resolve(cap, marketplace)
-        matched = [p for p in providers if p["match"] and not p["installed"]]
+    def _resolve_caps(caps, required_caps):
+        """Resolve a list of capabilities, recursively resolving provider deps."""
+        for cap in caps:
+            if cap in already_satisfied:
+                continue
+            if cap in resolving:
+                continue  # cycle detected, skip
 
-        if matched:
-            best = matched[0]
-            install_order.append({
-                "plugin": best["name"],
-                "capability": cap,
-                "reason": f"Provides '{cap}' — best environment match",
-                "required": cap in deps["missing"],
-            })
-        elif not any(p["installed"] for p in providers):
-            no_provider.append(cap)
+            providers = resolve(cap, marketplace)
+            matched = [p for p in providers if p["match"] and not p["installed"]]
+
+            if matched:
+                best = matched[0]
+                if best["name"] in planned:
+                    continue
+
+                # Recursively resolve this provider's dependencies first
+                provider_plugin = registry.find_marketplace_plugin(best["name"], marketplace)
+                if provider_plugin:
+                    provider_requires = provider_plugin.get("requires", [])
+                    provider_optional = provider_plugin.get("optional", [])
+                    if provider_requires or provider_optional:
+                        resolving.add(cap)
+                        _resolve_caps(provider_requires, set(provider_requires))
+                        _resolve_caps(provider_optional, set())
+                        resolving.discard(cap)
+
+                if best["name"] not in planned:
+                    planned.add(best["name"])
+                    install_order.append({
+                        "plugin": best["name"],
+                        "capability": cap,
+                        "reason": f"Provides '{cap}' — best environment match",
+                        "required": cap in required_caps,
+                    })
+            elif not any(p["installed"] for p in providers):
+                if cap not in no_provider:
+                    no_provider.append(cap)
+
+    required_set = set(deps["missing"])
+    _resolve_caps(deps["missing"] + deps["optional_missing"], required_set)
 
     return {
         "plugin": plugin_name,
@@ -156,7 +196,7 @@ def get_install_plan(plugin_name: str, marketplace: str = "nov-plugins") -> dict
     }
 
 
-def verify(plugin_name: str, marketplace: str = "nov-plugins") -> dict:
+def verify(plugin_name: str, marketplace: str = "claude-plugins-nov") -> dict:
     """Verify a plugin's dependencies are all satisfied.
 
     Returns:

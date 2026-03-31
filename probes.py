@@ -1,4 +1,4 @@
-"""Generic environment probes for nov-hub dependency resolution.
+"""Generic environment probes for nov-dependency-resolver dependency resolution.
 
 Eight primitives that detect facts about the user's environment.
 Never plugin-specific — new providers add marketplace metadata, not new probes.
@@ -133,11 +133,14 @@ def gather_facts(environment_reqs: list[dict]) -> dict:
     facts = {}
     for env_req in environment_reqs:
         for key, value in env_req.items():
-            fact_key = f"{key}:{value}"
-            if fact_key not in facts:
-                probe_fn = PROBES.get(key)
-                if probe_fn:
-                    facts[fact_key] = probe_fn(value)
-                else:
-                    facts[fact_key] = False
+            # List values expand into individual checks (e.g. os: ["linux", "darwin"])
+            values = value if isinstance(value, list) else [value]
+            for v in values:
+                fact_key = f"{key}:{v}"
+                if fact_key not in facts:
+                    probe_fn = PROBES.get(key)
+                    if probe_fn:
+                        facts[fact_key] = probe_fn(v)
+                    else:
+                        facts[fact_key] = False
     return facts

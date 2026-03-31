@@ -56,6 +56,27 @@ def test_resolve_notification(mock_home, marketplace_json, monkeypatch):
     assert providers[0]["name"] == "notify-linux"
 
 
+def test_resolve_list_environment(mock_home, marketplace_json, monkeypatch):
+    """Provider with os: ["linux", "darwin", "windows"] should match on any of those."""
+    import probes
+    monkeypatch.setattr(probes, "probe_os", lambda: "darwin")
+
+    providers = resolver.resolve("daemon")
+    assert len(providers) == 1
+    assert providers[0]["name"] == "daemon-manager"
+    assert providers[0]["match"] is True
+
+
+def test_resolve_list_environment_no_match(mock_home, marketplace_json, monkeypatch):
+    """Provider with os list should NOT match on unsupported OS."""
+    import probes
+    monkeypatch.setattr(probes, "probe_os", lambda: "freebsd")
+
+    providers = resolver.resolve("daemon")
+    assert len(providers) == 1
+    assert providers[0]["match"] is False
+
+
 def test_resolve_no_providers(mock_home, marketplace_json):
     result = resolver.resolve("nonexistent")
     assert result == []
@@ -99,6 +120,32 @@ def test_verify_fail(mock_home, marketplace_json):
     result = resolver.verify("cardwatch")
     assert result["passed"] is False
     assert "notification" in result["details"]["missing"]
+
+
+def test_get_install_plan_transitive(mock_home, marketplace_json, monkeypatch):
+    """Transitive deps: test-app -> browser-automation (test-browser) -> daemon (test-daemon).
+
+    Install order must have test-daemon before test-browser.
+    """
+    import probes
+    monkeypatch.setattr(probes, "probe_os", lambda: "linux")
+
+    plan = resolver.get_install_plan("test-app")
+    assert plan["plugin"] == "test-app"
+    names = [entry["plugin"] for entry in plan["install_order"]]
+    assert "test-daemon" in names
+    assert "test-browser" in names
+    assert names.index("test-daemon") < names.index("test-browser")
+
+
+def test_get_install_plan_transitive_no_duplicates(mock_home, marketplace_json, monkeypatch):
+    """Transitive resolution should not produce duplicate entries."""
+    import probes
+    monkeypatch.setattr(probes, "probe_os", lambda: "linux")
+
+    plan = resolver.get_install_plan("test-app")
+    names = [entry["plugin"] for entry in plan["install_order"]]
+    assert len(names) == len(set(names))
 
 
 def test_detect_environment():

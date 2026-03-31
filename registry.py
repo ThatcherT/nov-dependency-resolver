@@ -1,4 +1,4 @@
-"""Registry reader for nov-hub — reads marketplace, installed plugins, and capability contracts.
+"""Registry reader for nov-dependency-resolver — reads marketplace, installed plugins, and capability contracts.
 
 All reads are at call time, never cached.
 """
@@ -27,7 +27,7 @@ def get_installed_plugins() -> dict:
     """Read installed_plugins.json.
 
     Returns:
-        Dict mapping plugin keys (e.g. "liteframe@nov-plugins") to their install info.
+        Dict mapping plugin keys (e.g. "liteframe@claude-plugins-nov") to their install info.
     """
     data = _read_json(INSTALLED_PATH)
     if not data or not isinstance(data, dict):
@@ -47,7 +47,7 @@ def get_enabled_plugins() -> dict:
     return data.get("enabledPlugins", {})
 
 
-def get_marketplace_plugins(marketplace: str = "nov-plugins") -> list[dict]:
+def get_marketplace_plugins(marketplace: str = "claude-plugins-nov") -> list[dict]:
     """Read plugins from a marketplace's marketplace.json.
 
     Returns:
@@ -64,7 +64,7 @@ def get_plugin_manifest(plugin_key: str) -> dict | None:
     """Read the plugin.json manifest for an installed plugin.
 
     Args:
-        plugin_key: Key from installed_plugins.json (e.g. "liteframe@nov-plugins")
+        plugin_key: Key from installed_plugins.json (e.g. "liteframe@claude-plugins-nov")
 
     Returns:
         Parsed plugin.json dict, or None if not found.
@@ -78,7 +78,7 @@ def get_plugin_manifest(plugin_key: str) -> dict | None:
     return _read_json(manifest_path)
 
 
-def get_capability_contract(capability: str, marketplace: str = "nov-plugins") -> dict | None:
+def get_capability_contract(capability: str, marketplace: str = "claude-plugins-nov") -> dict | None:
     """Read a capability contract JSON file.
 
     Args:
@@ -92,7 +92,7 @@ def get_capability_contract(capability: str, marketplace: str = "nov-plugins") -
     return _read_json(contract_path)
 
 
-def list_capability_contracts(marketplace: str = "nov-plugins") -> list[dict]:
+def list_capability_contracts(marketplace: str = "claude-plugins-nov") -> list[dict]:
     """List all capability contracts in a marketplace.
 
     Returns:
@@ -109,7 +109,7 @@ def list_capability_contracts(marketplace: str = "nov-plugins") -> list[dict]:
     return contracts
 
 
-def find_marketplace_plugin(name: str, marketplace: str = "nov-plugins") -> dict | None:
+def find_marketplace_plugin(name: str, marketplace: str = "claude-plugins-nov") -> dict | None:
     """Find a plugin entry in the marketplace by name.
 
     Returns:
@@ -121,7 +121,7 @@ def find_marketplace_plugin(name: str, marketplace: str = "nov-plugins") -> dict
     return None
 
 
-def get_providers(capability: str, marketplace: str = "nov-plugins") -> list[dict]:
+def get_providers(capability: str, marketplace: str = "claude-plugins-nov") -> list[dict]:
     """Find all plugins in the marketplace that provide a capability.
 
     Returns:

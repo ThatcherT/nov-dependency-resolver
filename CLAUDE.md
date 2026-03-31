@@ -1,4 +1,4 @@
-# CLAUDE.md — nov-hub
+# CLAUDE.md — nov-dependency-resolver
 
 Plugin dependency resolver for Claude Code. Detects environment, resolves capabilities to providers, auto-selects based on environment probes, generates install plans.
 
@@ -6,7 +6,7 @@ Plugin dependency resolver for Claude Code. Detects environment, resolves capabi
 
 | Command | What it does |
 |---------|-------------|
-| `/nov-hub:setup` | Diagnose environment and resolve plugin dependencies |
+| `/nov-dependency-resolver:setup` | Diagnose environment and resolve plugin dependencies |
 
 ## Stack
 
@@ -42,14 +42,14 @@ make test                       # run tests
 
 Install as plugin:
 ```bash
-claude --plugin-dir /home/thatcher/projects/nov/projects/plugins/nov-hub
+claude --plugin-dir /home/thatcher/projects/nov/projects/plugins/nov-dependency-resolver
 ```
 
 ## Capability System
 
 Plugins declare dependencies on capabilities — semantic contracts that providers satisfy.
 
-**How it works:** A plugin's marketplace.json entry has `requires: ["notification"]`. nov-hub's `check_dependencies` reads this, finds providers that have `provides: ["notification"]`, runs environment probes against each provider's `environment` conditions, and auto-selects the best match.
+**How it works:** A plugin's marketplace.json entry has `requires: ["notification"]`. nov-dependency-resolver's `check_dependencies` reads this, finds providers that have `provides: ["notification"]`, runs environment probes against each provider's `environment` conditions, and auto-selects the best match.
 
 **Contracts are semantic, not signatures.** Capability contracts describe behavior (input, output, determinism guarantees) and hint registries. They do NOT mandate specific tool names. Providers implement the capability with whatever tool names make sense. Claude handles routing at runtime based on available tools and the contract description.
 

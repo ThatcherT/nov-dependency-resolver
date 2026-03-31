@@ -1,4 +1,4 @@
-"""Contract validation for nov-hub — validates providers against capability contracts.
+"""Contract validation for nov-dependency-resolver — validates providers against capability contracts.
 
 Contracts are semantic — they describe behavior, not tool signatures.
 Validation checks that providers declare the capability and a contract exists.
@@ -8,7 +8,7 @@ Claude handles tool routing at runtime based on available tools.
 import registry
 
 
-def validate_provider(plugin_name: str, capability: str, marketplace: str = "nov-plugins") -> dict:
+def validate_provider(plugin_name: str, capability: str, marketplace: str = "claude-plugins-nov") -> dict:
     """Validate that a provider can satisfy a capability contract.
 
     Checks:
@@ -57,7 +57,7 @@ def validate_provider(plugin_name: str, capability: str, marketplace: str = "nov
     return result
 
 
-def validate_all_providers(capability: str, marketplace: str = "nov-plugins") -> list[dict]:
+def validate_all_providers(capability: str, marketplace: str = "claude-plugins-nov") -> list[dict]:
     """Validate all providers of a capability.
 
     Returns:

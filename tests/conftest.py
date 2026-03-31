@@ -1,4 +1,4 @@
-"""Shared fixtures for nov-hub tests."""
+"""Shared fixtures for nov-dependency-resolver tests."""
 
 import json
 
@@ -10,10 +10,10 @@ def mock_home(tmp_path, monkeypatch):
     """Set up a fake ~/.claude directory structure for testing."""
     claude_dir = tmp_path / ".claude"
     plugins_dir = claude_dir / "plugins"
-    marketplaces_dir = plugins_dir / "marketplaces" / "nov-plugins"
+    marketplaces_dir = plugins_dir / "marketplaces" / "claude-plugins-nov"
     capabilities_dir = marketplaces_dir / "capabilities"
     claude_plugin_dir = marketplaces_dir / ".claude-plugin"
-    cache_dir = plugins_dir / "cache" / "nov-plugins"
+    cache_dir = plugins_dir / "cache" / "claude-plugins-nov"
 
     for d in [capabilities_dir, claude_plugin_dir, cache_dir]:
         d.mkdir(parents=True)
@@ -36,9 +36,9 @@ def mock_home(tmp_path, monkeypatch):
 @pytest.fixture
 def marketplace_json(mock_home):
     """Write a marketplace.json with test plugins."""
-    mp_path = mock_home / ".claude" / "plugins" / "marketplaces" / "nov-plugins" / ".claude-plugin" / "marketplace.json"
+    mp_path = mock_home / ".claude" / "plugins" / "marketplaces" / "claude-plugins-nov" / ".claude-plugin" / "marketplace.json"
     data = {
-        "name": "nov-plugins",
+        "name": "claude-plugins-nov",
         "plugins": [
             {
                 "name": "cardwatch",
@@ -71,6 +71,46 @@ def marketplace_json(mock_home):
                 "environment": {"os": "darwin"},
             },
             {
+                "name": "daemon-manager",
+                "source": {"source": "github", "repo": "ThatcherT/daemon-manager"},
+                "description": "Persistent background process manager",
+                "version": "1.0.0",
+                "requires": [],
+                "optional": [],
+                "provides": ["daemon"],
+                "environment": {"os": ["linux", "darwin", "windows"]},
+            },
+            {
+                "name": "test-app",
+                "source": {"source": "github", "repo": "ThatcherT/test-app"},
+                "description": "Test app requiring browser-automation",
+                "version": "1.0.0",
+                "requires": ["browser-automation"],
+                "optional": [],
+                "provides": [],
+                "environment": {},
+            },
+            {
+                "name": "test-browser",
+                "source": {"source": "github", "repo": "ThatcherT/test-browser"},
+                "description": "Browser automation provider requiring daemon-proc",
+                "version": "1.0.0",
+                "requires": ["daemon-proc"],
+                "optional": [],
+                "provides": ["browser-automation"],
+                "environment": {},
+            },
+            {
+                "name": "test-daemon",
+                "source": {"source": "github", "repo": "ThatcherT/test-daemon"},
+                "description": "Daemon process provider for all platforms",
+                "version": "1.0.0",
+                "requires": [],
+                "optional": [],
+                "provides": ["daemon-proc"],
+                "environment": {"os": ["linux", "darwin", "windows"]},
+            },
+            {
                 "name": "liteframe",
                 "source": {"source": "github", "repo": "ThatcherT/liteframe"},
                 "description": "Static page publisher",
@@ -90,7 +130,7 @@ def marketplace_json(mock_home):
 @pytest.fixture
 def notification_contract(mock_home):
     """Write a notification capability contract."""
-    cap_path = mock_home / ".claude" / "plugins" / "marketplaces" / "nov-plugins" / "capabilities" / "notification.json"
+    cap_path = mock_home / ".claude" / "plugins" / "marketplaces" / "claude-plugins-nov" / "capabilities" / "notification.json"
     data = {
         "name": "notification",
         "description": "Alert the user through one or more channels",
@@ -115,7 +155,7 @@ def notification_contract(mock_home):
 @pytest.fixture
 def installed_plugins(mock_home):
     """Write an installed_plugins.json with notify-linux installed."""
-    install_path = mock_home / ".claude" / "plugins" / "cache" / "nov-plugins" / "notify-linux" / "2.0.0"
+    install_path = mock_home / ".claude" / "plugins" / "cache" / "claude-plugins-nov" / "notify-linux" / "2.0.0"
     install_path.mkdir(parents=True)
     plugin_dir = install_path / ".claude-plugin"
     plugin_dir.mkdir()
@@ -127,7 +167,7 @@ def installed_plugins(mock_home):
     data = {
         "version": 2,
         "plugins": {
-            "notify-linux@nov-plugins": [
+            "notify-linux@claude-plugins-nov": [
                 {
                     "scope": "user",
                     "installPath": str(install_path),

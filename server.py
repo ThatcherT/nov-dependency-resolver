@@ -1,4 +1,4 @@
-"""MCP server for nov-hub — plugin dependency resolver and environment detective."""
+"""MCP server for nov-dependency-resolver — plugin dependency resolver and environment detective."""
 
 from mcp.server.fastmcp import FastMCP
 
@@ -6,7 +6,7 @@ import contracts
 import registry
 import resolver
 
-mcp = FastMCP("nov-hub")
+mcp = FastMCP("nov-dependency-resolver")
 
 
 @mcp.tool()

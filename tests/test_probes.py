@@ -75,6 +75,16 @@ def test_probe_mcp_from_installed(mock_home, installed_plugins):
     assert probes.probe_mcp("nonexistent") is False
 
 
+def test_gather_facts_list_values(monkeypatch):
+    """List values in environment reqs expand into individual fact entries."""
+    monkeypatch.setattr(probes, "probe_os", lambda: "linux")
+    env_reqs = [{"os": ["linux", "darwin", "windows"]}]
+    facts = probes.gather_facts(env_reqs)
+    assert facts["os:linux"] is True
+    assert facts["os:darwin"] is False
+    assert facts["os:windows"] is False
+
+
 def test_gather_facts(monkeypatch):
     monkeypatch.delenv("PSModulePath", raising=False)
     env_reqs = [

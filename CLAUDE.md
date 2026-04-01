@@ -6,6 +6,7 @@ Plugin dependency resolver for Claude Code. Detects environment, resolves capabi
 
 | Command | What it does |
 |---------|-------------|
+| `/nov-dependency-resolver:install <plugin>` | Install a plugin with all dependencies resolved automatically |
 | `/nov-dependency-resolver:setup` | Diagnose environment and resolve plugin dependencies |
 
 ## Stack

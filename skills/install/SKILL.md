@@ -15,23 +15,28 @@ The user provides a plugin name (e.g., `/nov-dependency-resolver:install zapfram
 
 1. **Get the install plan.** Call the `get_install_plan` MCP tool with the plugin name.
 
-2. **Handle errors.** If the plan has an `error` field, tell the user and stop. If `no_provider_available` is non-empty, list the unsatisfied capabilities and explain what's missing. Stop — don't partial-install.
+2. **Handle errors and early exits.**
+   - If the plan has an `error` field, tell the user and stop.
+   - If `no_provider_available` is non-empty, list the unsatisfied capabilities and explain what's missing. Stop — don't partial-install.
+   - If `target_installed` is true AND `install_order` is empty: tell the user the plugin is already installed with all dependencies satisfied. Stop.
+   - If `target_installed` is true but `install_order` has entries: tell the user the plugin is installed but has missing dependencies, then continue to step 3 to install them.
 
 3. **Show the plan.** Present what will be installed:
    - Already satisfied capabilities (no action needed)
    - Each plugin to install, in order, with: name, what capability it provides, and why it was selected
-   - The target plugin itself (installed last)
+   - Mark each entry as **(required)** or **(optional)** based on the `required` field
+   - The target plugin itself (installed last), unless `target_installed` is true
    - Format as a clear list the user can review at a glance
 
 4. **Ask for confirmation.** Wait for explicit user approval before installing anything.
 
-5. **Install dependencies in order.** For each entry in `install_order`, run:
+5. **Install in order.** For each entry in `install_order`, run:
    ```
    claude plugin install <plugin_name>
    ```
    If any install fails, stop and report the error. Don't continue with remaining installs.
 
-6. **Install the target plugin.** Run:
+6. **Install the target plugin** (skip if `target_installed` is true). Run:
    ```
    claude plugin install <plugin_name>
    ```
@@ -47,6 +52,4 @@ The user provides a plugin name (e.g., `/nov-dependency-resolver:install zapfram
 
 - Never install without showing the plan and getting confirmation first
 - Install in the exact order returned by `install_order` — dependencies before dependents
-- If the target plugin is already installed, say so and skip to checking its dependencies
-- If all dependencies are already satisfied, just install the target plugin directly
 - If a plugin install command fails, stop immediately — don't leave a half-installed dependency chain

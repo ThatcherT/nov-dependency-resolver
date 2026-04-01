@@ -190,6 +190,7 @@ def get_install_plan(plugin_name: str, marketplace: str = "nov-plugins") -> dict
 
     return {
         "plugin": plugin_name,
+        "target_installed": registry.is_plugin_installed(plugin_name),
         "install_order": install_order,
         "already_satisfied": already_satisfied,
         "no_provider_available": no_provider,

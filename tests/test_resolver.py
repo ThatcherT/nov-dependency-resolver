@@ -73,6 +73,18 @@ def test_get_install_plan_already_satisfied(mock_home, marketplace_json, install
     assert len(notification_installs) == 0
 
 
+def test_get_install_plan_target_installed(mock_home, marketplace_json, installed_plugins):
+    """Plan should report target_installed=True when the plugin is already installed."""
+    plan = resolver.get_install_plan("notify-linux")
+    assert plan["target_installed"] is True
+
+
+def test_get_install_plan_target_not_installed(mock_home, marketplace_json):
+    """Plan should report target_installed=False when the plugin is not installed."""
+    plan = resolver.get_install_plan("cardwatch")
+    assert plan["target_installed"] is False
+
+
 def test_get_install_plan_transitive(mock_home, marketplace_json, monkeypatch):
     """Transitive deps: test-app -> browser-automation (test-browser) -> daemon (test-daemon).
 

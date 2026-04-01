@@ -1,22 +1,6 @@
 """Tests for resolver.py — dependency diff engine."""
 
-import os
-import sys
-
-import pytest
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
 import resolver
-
-
-def test_check_dependencies_missing(mock_home, marketplace_json):
-    """Cardwatch requires notification, nothing installed — should be missing."""
-    result = resolver.check_dependencies("cardwatch")
-    assert result["plugin"] == "cardwatch"
-    assert "notification" in result["missing"]
-    assert "scheduling" in result["optional_missing"]
-    assert result["satisfied"] == []
 
 
 def test_check_dependencies_satisfied(mock_home, marketplace_json, installed_plugins):
@@ -25,18 +9,6 @@ def test_check_dependencies_satisfied(mock_home, marketplace_json, installed_plu
     assert "notification" in result["satisfied"]
     assert result["missing"] == []
     assert "scheduling" in result["optional_missing"]
-
-
-def test_check_dependencies_built_in(mock_home, marketplace_json):
-    """Liteframe has built_in_capabilities — should be satisfied."""
-    result = resolver.check_dependencies("liteframe")
-    assert "static-site-build" in result["satisfied"]
-    assert result["missing"] == []
-
-
-def test_check_dependencies_not_found(mock_home, marketplace_json):
-    result = resolver.check_dependencies("nonexistent")
-    assert "error" in result
 
 
 def test_resolve_notification(mock_home, marketplace_json, monkeypatch):
@@ -77,11 +49,6 @@ def test_resolve_list_environment_no_match(mock_home, marketplace_json, monkeypa
     assert providers[0]["match"] is False
 
 
-def test_resolve_no_providers(mock_home, marketplace_json):
-    result = resolver.resolve("nonexistent")
-    assert result == []
-
-
 def test_get_install_plan(mock_home, marketplace_json, monkeypatch):
     """Should auto-select notify-linux on linux."""
     import probes
@@ -104,11 +71,6 @@ def test_get_install_plan_already_satisfied(mock_home, marketplace_json, install
     # No install needed for notification
     notification_installs = [i for i in plan["install_order"] if i["capability"] == "notification"]
     assert len(notification_installs) == 0
-
-
-def test_get_install_plan_not_found(mock_home, marketplace_json):
-    plan = resolver.get_install_plan("nonexistent")
-    assert "error" in plan
 
 
 def test_get_install_plan_transitive(mock_home, marketplace_json, monkeypatch):

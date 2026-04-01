@@ -3,12 +3,10 @@
 import json
 import os
 import re
-import sys
 
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
-sys.path.insert(0, ROOT)
 
 
 def _read_json(path):

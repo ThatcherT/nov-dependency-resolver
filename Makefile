@@ -1,4 +1,4 @@
-.PHONY: test lint server
+.PHONY: test server
 
 test:
 	python -m pytest tests/ -v

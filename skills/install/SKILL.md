@@ -46,7 +46,7 @@ The user provides a plugin name (e.g., `/nov-dependency-resolver:install zapfram
 7. **Next steps.** Tell the user:
    - Type `/reload-plugins` to load the new plugins into the current session (no restart needed)
    - List the skills the target plugin provides (look up its marketplace entry description to give context)
-   - If the plugin has `userConfig` fields, mention they can run `claude plugin configure <plugin_name>` to set them up
+   - If the plugin has `userConfig` fields, mention that configuration was prompted during installation. If they need to reconfigure later, they can run `claude plugin disable <plugin_name>` followed by `claude plugin enable <plugin_name>` to re-trigger the config prompt.
 
 ## Rules
 

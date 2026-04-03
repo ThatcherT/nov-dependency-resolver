@@ -1,10 +1,10 @@
-"""MCP server for nov-dependency-resolver — plugin dependency resolver and environment detective."""
+"""MCP server for softwaresoftware — plugin dependency resolver and environment detective."""
 
 from mcp.server.fastmcp import FastMCP
 
 import resolver
 
-mcp = FastMCP("nov-dependency-resolver")
+mcp = FastMCP("softwaresoftware")
 
 
 @mcp.tool()

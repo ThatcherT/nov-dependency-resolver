@@ -35,7 +35,7 @@ def test_required_fields(plugin_json):
 
 
 def test_name(plugin_json):
-    assert plugin_json["name"] == "nov-dependency-resolver"
+    assert plugin_json["name"] == "softwaresoftware"
 
 
 def test_semver(plugin_json):
@@ -48,8 +48,8 @@ def test_version_matches_pyproject(plugin_json, pyproject):
 
 def test_mcp_server_config(plugin_json):
     assert "mcpServers" in plugin_json
-    assert "nov-dependency-resolver" in plugin_json["mcpServers"]
-    server = plugin_json["mcpServers"]["nov-dependency-resolver"]
+    assert "softwaresoftware" in plugin_json["mcpServers"]
+    server = plugin_json["mcpServers"]["softwaresoftware"]
     assert server["command"] == "python"
     assert "server.py" in server["args"][0]
 

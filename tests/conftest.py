@@ -1,4 +1,4 @@
-"""Shared fixtures for nov-dependency-resolver tests."""
+"""Shared fixtures for softwaresoftware tests."""
 
 import json
 
@@ -10,9 +10,9 @@ def mock_home(tmp_path, monkeypatch):
     """Set up a fake ~/.claude directory structure for testing."""
     claude_dir = tmp_path / ".claude"
     plugins_dir = claude_dir / "plugins"
-    marketplaces_dir = plugins_dir / "marketplaces" / "nov-plugins"
+    marketplaces_dir = plugins_dir / "marketplaces" / "softwaresoftware-plugins"
     claude_plugin_dir = marketplaces_dir / ".claude-plugin"
-    cache_dir = plugins_dir / "cache" / "nov-plugins"
+    cache_dir = plugins_dir / "cache" / "softwaresoftware-plugins"
 
     for d in [claude_plugin_dir, cache_dir]:
         d.mkdir(parents=True)
@@ -35,9 +35,9 @@ def mock_home(tmp_path, monkeypatch):
 @pytest.fixture
 def marketplace_json(mock_home):
     """Write a marketplace.json with test plugins."""
-    mp_path = mock_home / ".claude" / "plugins" / "marketplaces" / "nov-plugins" / ".claude-plugin" / "marketplace.json"
+    mp_path = mock_home / ".claude" / "plugins" / "marketplaces" / "softwaresoftware-plugins" / ".claude-plugin" / "marketplace.json"
     data = {
-        "name": "nov-plugins",
+        "name": "softwaresoftware-plugins",
         "plugins": [
             {
                 "name": "cardwatch",
@@ -129,7 +129,7 @@ def marketplace_json(mock_home):
 @pytest.fixture
 def installed_plugins(mock_home):
     """Write an installed_plugins.json with notify-linux installed."""
-    install_path = mock_home / ".claude" / "plugins" / "cache" / "nov-plugins" / "notify-linux" / "2.0.0"
+    install_path = mock_home / ".claude" / "plugins" / "cache" / "softwaresoftware-plugins" / "notify-linux" / "2.0.0"
     install_path.mkdir(parents=True)
     plugin_dir = install_path / ".claude-plugin"
     plugin_dir.mkdir()
@@ -141,7 +141,7 @@ def installed_plugins(mock_home):
     data = {
         "version": 2,
         "plugins": {
-            "notify-linux@nov-plugins": [
+            "notify-linux@softwaresoftware-plugins": [
                 {
                     "scope": "user",
                     "installPath": str(install_path),

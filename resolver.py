@@ -1,4 +1,4 @@
-"""Dependency resolver for nov-dependency-resolver — the core diff engine.
+"""Dependency resolver for softwaresoftware — the core diff engine.
 
 Computes what a plugin needs, what's satisfied, what's missing,
 and auto-selects providers based on environment probes.
@@ -8,7 +8,7 @@ import probes
 import registry
 
 
-def check_dependencies(plugin_name: str, marketplace: str = "nov-plugins") -> dict:
+def check_dependencies(plugin_name: str, marketplace: str = "softwaresoftware-plugins") -> dict:
     """Check which dependencies a plugin has and their satisfaction status.
 
     Returns:
@@ -61,7 +61,7 @@ def check_dependencies(plugin_name: str, marketplace: str = "nov-plugins") -> di
     }
 
 
-def resolve(capability: str, marketplace: str = "nov-plugins") -> list[dict]:
+def resolve(capability: str, marketplace: str = "softwaresoftware-plugins") -> list[dict]:
     """Find and rank providers for a capability based on environment match.
 
     Returns:
@@ -119,7 +119,7 @@ def resolve(capability: str, marketplace: str = "nov-plugins") -> list[dict]:
     return ranked
 
 
-def get_install_plan(plugin_name: str, marketplace: str = "nov-plugins") -> dict:
+def get_install_plan(plugin_name: str, marketplace: str = "softwaresoftware-plugins") -> dict:
     """Generate an ordered install plan for a plugin and its dependencies.
 
     Auto-selects the best provider for each missing capability.

@@ -3,13 +3,13 @@ name: install
 description: Install a plugin with all its dependencies resolved automatically. Detects your environment, picks the right providers, and installs everything in the correct order.
 ---
 
-# nov-dependency-resolver install
+# softwaresoftware install
 
 Install a plugin and all its dependencies in one step.
 
 ## Arguments
 
-The user provides a plugin name (e.g., `/nov-dependency-resolver:install zapframe`).
+The user provides a plugin name (e.g., `/softwaresoftware:install zapframe`).
 
 ## Workflow
 

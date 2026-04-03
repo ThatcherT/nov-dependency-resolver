@@ -1,4 +1,4 @@
-"""Generic environment probes for nov-dependency-resolver dependency resolution.
+"""Generic environment probes for softwaresoftware dependency resolution.
 
 Eight primitives that detect facts about the user's environment.
 Never plugin-specific — new providers add marketplace metadata, not new probes.

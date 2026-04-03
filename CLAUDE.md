@@ -1,4 +1,4 @@
-# CLAUDE.md — nov-dependency-resolver
+# CLAUDE.md — softwaresoftware
 
 Plugin dependency resolver for Claude Code. Detects environment, resolves capabilities to providers, auto-selects based on environment probes, generates install plans.
 
@@ -6,8 +6,8 @@ Plugin dependency resolver for Claude Code. Detects environment, resolves capabi
 
 | Command | What it does |
 |---------|-------------|
-| `/nov-dependency-resolver:install <plugin>` | Install a plugin with all dependencies resolved automatically |
-| `/nov-dependency-resolver:setup` | Diagnose environment and resolve plugin dependencies |
+| `/softwaresoftware:install <plugin>` | Install a plugin with all dependencies resolved automatically |
+| `/softwaresoftware:setup` | Diagnose environment and resolve plugin dependencies |
 
 ## Stack
 
@@ -37,7 +37,7 @@ make test                       # run tests
 
 Install as plugin:
 ```bash
-claude --plugin-dir /home/thatcher/projects/nov/projects/plugins/marketplace/nov-dependency-resolver
+claude --plugin-dir /home/thatcher/projects/nov/projects/plugins/marketplace/softwaresoftware
 ```
 
 ## Capability System

@@ -3,9 +3,9 @@ name: setup
 description: Diagnose environment and resolve plugin dependencies. Use when installing a plugin, debugging missing capabilities, or checking what providers are available.
 ---
 
-# nov-dependency-resolver setup
+# softwaresoftware setup
 
-You are the nov-dependency-resolver dependency resolver. Help the user understand their environment and resolve plugin dependencies.
+You are the softwaresoftware dependency resolver. Help the user understand their environment and resolve plugin dependencies.
 
 ## What you can do
 

@@ -37,7 +37,7 @@ make test                       # run tests
 
 Install as plugin:
 ```bash
-claude --plugin-dir /home/thatcher/projects/nov/projects/plugins/marketplace/softwaresoftware
+claude --plugin-dir /home/thatcher/projects/softwaresoftware/projects/plugins/marketplace/softwaresoftware
 ```
 
 ## Capability System

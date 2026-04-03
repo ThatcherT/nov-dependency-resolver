@@ -155,7 +155,8 @@ def marketplace_json_with_external(mock_home):
             },
             {
                 "name": "ext-playwright",
-                "source": {"source": "registry", "registry": "claude-plugins-official"},
+                "source": {"source": "github", "repo": "anthropics/claude-plugins-official"},
+                "registry": "claude-plugins-official",
                 "description": "External Playwright browser automation",
                 "version": "0.0.0",
                 "requires": [],

@@ -34,7 +34,7 @@ def list_marketplace_plugins(marketplace: str = "softwaresoftware-plugins") -> d
         }
         if p.get("external"):
             entry["external"] = True
-            entry["registry"] = p.get("source", {}).get("registry", "claude-plugins-official")
+            entry["registry"] = p.get("registry", "claude-plugins-official")
         plugins.append(entry)
     return {"marketplace": marketplace, "plugins": plugins}
 
@@ -225,7 +225,7 @@ def get_install_plan(plugin_name: str, marketplace: str = "softwaresoftware-plug
                     }
                     if best.get("external"):
                         entry["external"] = True
-                        entry["registry"] = best.get("source", {}).get("registry", "claude-plugins-official")
+                        entry["registry"] = best.get("registry", "claude-plugins-official")
                     install_order.append(entry)
             elif not any(p["installed"] for p in providers):
                 if cap not in no_provider:

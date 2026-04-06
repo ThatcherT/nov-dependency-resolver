@@ -10,6 +10,25 @@ import probes
 import registry
 import telemetry
 
+# Third-party MCPs that can satisfy capabilities without a marketplace plugin.
+# Key: MCP server name (as it appears in settings.json mcpServers).
+# Value: list of capabilities the MCP satisfies when loaded.
+KNOWN_MCP_CAPABILITIES = {
+    "slack": ["channel", "notification"],
+    "gmail": ["notification"],
+}
+
+
+def _mcp_satisfies(capability: str) -> str | None:
+    """Check if a loaded third-party MCP satisfies a capability.
+
+    Returns the MCP name if satisfied, None otherwise.
+    """
+    for mcp_name, caps in KNOWN_MCP_CAPABILITIES.items():
+        if capability in caps and probes.probe_mcp(mcp_name):
+            return mcp_name
+    return None
+
 
 def list_marketplace_plugins(marketplace: str = "softwaresoftware-plugins") -> dict:
     """List all plugins available in the marketplace with install status.
@@ -71,6 +90,8 @@ def check_dependencies(plugin_name: str, marketplace: str = "softwaresoftware-pl
     for cap in requires:
         if cap in built_in:
             continue
+        elif _mcp_satisfies(cap):
+            satisfied.append(cap)
         elif _has_installed_provider(cap, marketplace):
             satisfied.append(cap)
         else:
@@ -79,6 +100,8 @@ def check_dependencies(plugin_name: str, marketplace: str = "softwaresoftware-pl
     for cap in optional:
         if cap in built_in:
             continue
+        elif _mcp_satisfies(cap):
+            satisfied.append(cap)
         elif _has_installed_provider(cap, marketplace):
             satisfied.append(cap)
         else:
@@ -195,6 +218,12 @@ def get_install_plan(plugin_name: str, marketplace: str = "softwaresoftware-plug
                 continue
             if cap in resolving:
                 continue  # cycle detected, skip
+
+            # Check if a third-party MCP already satisfies this
+            mcp_name = _mcp_satisfies(cap)
+            if mcp_name:
+                already_satisfied.append(cap)
+                continue
 
             providers = resolve(cap, marketplace)
             matched = [p for p in providers if p["match"] and not p["installed"]]

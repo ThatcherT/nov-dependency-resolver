@@ -150,3 +150,38 @@ def test_get_install_plan_transitive_no_duplicates(mock_home, marketplace_json, 
     assert len(names) == len(set(names))
 
 
+def test_mcp_satisfies_capability(mock_home, marketplace_json, monkeypatch):
+    """When a known third-party MCP is loaded, its capabilities are satisfied."""
+    import probes
+    # Simulate Slack MCP being loaded
+    monkeypatch.setattr(probes, "probe_mcp", lambda name: name == "slack")
+
+    result = resolver.check_dependencies("cardwatch")
+    # Slack provides notification, so it should be satisfied
+    assert "notification" in result["satisfied"]
+    assert result["missing"] == []
+
+
+def test_mcp_satisfies_skips_install(mock_home, marketplace_json, monkeypatch):
+    """Install plan should not install a provider when a loaded MCP satisfies the capability."""
+    import probes
+    monkeypatch.setattr(probes, "probe_mcp", lambda name: name == "slack")
+
+    plan = resolver.get_install_plan("cardwatch")
+    assert "notification" in plan["already_satisfied"]
+    notification_installs = [i for i in plan["install_order"] if i["capability"] == "notification"]
+    assert len(notification_installs) == 0
+
+
+def test_mcp_satisfies_not_loaded(mock_home, marketplace_json, monkeypatch):
+    """When no known MCP is loaded, capabilities fall back to marketplace providers."""
+    import probes
+    monkeypatch.setattr(probes, "probe_mcp", lambda name: False)
+    monkeypatch.setattr(probes, "probe_os", lambda: "linux")
+    monkeypatch.setattr(probes, "probe_binary", lambda name: name == "notify-send")
+
+    plan = resolver.get_install_plan("cardwatch")
+    # Should fall back to installing notify-linux
+    assert any(i["plugin"] == "notify-linux" for i in plan["install_order"])
+
+

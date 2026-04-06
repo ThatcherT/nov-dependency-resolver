@@ -204,7 +204,7 @@ Avoid verb forms (`notify`, `automate-browser`) and implementation details (`tmu
 | `docker-dev-environment` | dockside | binary: docker |
 | `scheduling` | scheduling-agent | os, binary: systemctl |
 | `agent-spawning` | taskpilot | os, binary: tmux |
-| `channel` | termux-conversation | mcp |
+| `channel` | termux-channel | mcp |
 | `human-approval` | approval-channel | optional: channel |
 | `memory` | agent-memory | -- |
 | `design-system` | softwaresoftware-design-system | -- |

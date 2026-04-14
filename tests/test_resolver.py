@@ -319,6 +319,31 @@ def test_find_not_found(mock_home, marketplace_json, other_marketplace):
 # --- Post-install skill detection tests ---
 
 
+def test_external_target_has_registry_metadata(mock_home, marketplace_json_with_external, monkeypatch):
+    """When the target plugin is external, plan includes target_external and external_registries."""
+    import probes
+    monkeypatch.setattr(probes, "probe_os", lambda: "linux")
+    monkeypatch.setattr(probes, "probe_binary", lambda name: name == "npx")
+
+    plan = resolver.get_install_plan("ext-playwright")
+    assert plan["target_external"] is True
+    assert plan["target_registry"] == "claude-plugins-official"
+    assert "external_registries" in plan
+    assert "claude-plugins-official" in plan["external_registries"]
+    assert plan["external_registries"]["claude-plugins-official"]["repo"] == "anthropics/claude-plugins-official"
+
+
+def test_non_external_target_has_no_external_flag(mock_home, marketplace_json, monkeypatch):
+    """Non-external target plugins should have target_external=False."""
+    import probes
+    monkeypatch.setattr(probes, "probe_os", lambda: "linux")
+    monkeypatch.setattr(probes, "probe_binary", lambda name: name == "notify-send")
+
+    plan = resolver.get_install_plan("cardwatch")
+    assert plan["target_external"] is False
+    assert plan["target_registry"] is None
+
+
 def test_get_plugin_skills(mock_home, marketplace_json, installed_plugins):
     """Detect skills from an installed plugin's skills directory."""
     import registry

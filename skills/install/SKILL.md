@@ -32,6 +32,7 @@ The user provides a plugin name (e.g., `/softwaresoftware:install zapframe`) or 
    - If `no_provider_available` is non-empty, list the unsatisfied capabilities and explain what's missing. Stop — don't partial-install.
    - If `target_installed` is true AND `install_order` is empty: tell the user the plugin is already installed with all dependencies satisfied. Stop.
    - If `target_installed` is true but `install_order` has entries: tell the user the plugin is installed but has missing dependencies, then continue to step 4 to install them.
+   - If `target_external` is true: the target plugin comes from an external registry. The plan will include `external_registries` with the registry info and `target_registry` with the registry name. The skill must ensure this registry is configured (step 6) before installing the target with `claude plugin install <name>@<registry>`.
 
 4. **Show the plan.** Present what will be installed as a markdown table:
 
@@ -72,6 +73,7 @@ The user provides a plugin name (e.g., `/softwaresoftware:install zapframe`) or 
    - **Local plugins**: Run `claude plugin install <plugin_name>` as before
    - If successful, mark the task completed
    - If it fails, mark the task as errored and stop — don't continue with remaining installs
+   - **External target** (plan has `"target_external": true`): After installing all deps, install the target with `claude plugin install <plugin_name>@<target_registry>` where `<target_registry>` is the plan's `target_registry` field
 
 8. **Verify.** Run `claude plugin list` and confirm all expected plugins appear. Report success or any discrepancies.
 

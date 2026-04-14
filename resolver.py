@@ -371,13 +371,25 @@ def get_install_plan(plugin_name: str, marketplace: str | None = None) -> dict:
     required_set = set(deps["missing"])
     _resolve_caps(deps["missing"] + deps["optional_missing"], required_set)
 
-    # Include external registry metadata if any external plugins are in the plan
+    # Include external registry metadata if the target or any dep is external
     external_registries = {}
+    all_registries = registry.get_external_registries(resolved_marketplace)
+
+    # Check the target plugin itself
+    target_plugin = registry.find_marketplace_plugin(plugin_name, resolved_marketplace)
+    target_is_external = target_plugin.get("external", False) if target_plugin else False
+    if target_is_external:
+        reg_name = target_plugin.get("registry", "")
+        if reg_name and reg_name not in external_registries:
+            reg_info = all_registries.get(reg_name)
+            if reg_info:
+                external_registries[reg_name] = reg_info
+
+    # Check deps in install_order
     for entry in install_order:
         if entry.get("external"):
             reg_name = entry.get("registry", "")
             if reg_name and reg_name not in external_registries:
-                all_registries = registry.get_external_registries(resolved_marketplace)
                 reg_info = all_registries.get(reg_name)
                 if reg_info:
                     external_registries[reg_name] = reg_info
@@ -385,6 +397,8 @@ def get_install_plan(plugin_name: str, marketplace: str | None = None) -> dict:
     result = {
         "plugin": plugin_name,
         "target_installed": registry.is_plugin_installed(plugin_name),
+        "target_external": target_is_external,
+        "target_registry": target_plugin.get("registry", "") if target_is_external else None,
         "install_order": install_order,
         "already_satisfied": already_satisfied,
         "no_provider_available": no_provider,

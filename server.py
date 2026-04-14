@@ -2,6 +2,7 @@
 
 from mcp.server.fastmcp import FastMCP
 
+import registry
 import resolver
 
 mcp = FastMCP("softwaresoftware")
@@ -50,6 +51,22 @@ def get_uninstall_plan(plugin_name: str) -> dict:
     shared with other plugins are kept.
     """
     return resolver.get_uninstall_plan(plugin_name)
+
+
+@mcp.tool()
+def get_plugin_post_install(plugin_name: str) -> dict:
+    """Get post-install info for a plugin: detected skills, whether it has a setup skill.
+
+    Call after installing a plugin to discover available skills and suggest
+    next steps like running a :setup skill.
+    """
+    skills = registry.get_plugin_skills(plugin_name)
+    return {
+        "plugin": plugin_name,
+        "installed": registry.is_plugin_installed(plugin_name),
+        "skills": skills,
+        "has_setup": "setup" in skills,
+    }
 
 
 if __name__ == "__main__":

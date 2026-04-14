@@ -316,3 +316,51 @@ def test_find_not_found(mock_home, marketplace_json, other_marketplace):
     assert mp is None
 
 
+# --- Post-install skill detection tests ---
+
+
+def test_get_plugin_skills(mock_home, marketplace_json, installed_plugins):
+    """Detect skills from an installed plugin's skills directory."""
+    import registry
+    # Create a fake skills directory for notify-linux
+    install_path = mock_home / ".claude" / "plugins" / "cache" / "softwaresoftware-plugins" / "notify-linux" / "2.0.0"
+    for skill_name in ["setup", "test"]:
+        skill_dir = install_path / "skills" / skill_name
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(f"# {skill_name}")
+
+    skills = registry.get_plugin_skills("notify-linux")
+    assert skills == ["setup", "test"]
+
+
+def test_get_plugin_skills_has_setup(mock_home, marketplace_json, installed_plugins):
+    """has_setup detection for a plugin with a setup skill."""
+    import registry
+    install_path = mock_home / ".claude" / "plugins" / "cache" / "softwaresoftware-plugins" / "notify-linux" / "2.0.0"
+    setup_dir = install_path / "skills" / "setup"
+    setup_dir.mkdir(parents=True)
+    (setup_dir / "SKILL.md").write_text("# setup")
+
+    skills = registry.get_plugin_skills("notify-linux")
+    assert "setup" in skills
+
+
+def test_get_plugin_skills_no_setup(mock_home, marketplace_json, installed_plugins):
+    """Plugin without a setup skill."""
+    import registry
+    install_path = mock_home / ".claude" / "plugins" / "cache" / "softwaresoftware-plugins" / "notify-linux" / "2.0.0"
+    skill_dir = install_path / "skills" / "send"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("# send")
+
+    skills = registry.get_plugin_skills("notify-linux")
+    assert "setup" not in skills
+    assert "send" in skills
+
+
+def test_get_plugin_skills_not_installed(mock_home, marketplace_json):
+    """Skills for a non-installed plugin returns empty list."""
+    import registry
+    assert registry.get_plugin_skills("not-installed") == []
+
+

@@ -1,6 +1,6 @@
 [project]
 name = "softwaresoftware"
-version = "1.1.0"
+version = "1.2.0"
 description = "Plugin dependency resolver for Claude Code"
 requires-python = ">=3.11"
 license = {text = "MIT"}

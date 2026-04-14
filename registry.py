@@ -181,3 +181,33 @@ def is_plugin_installed(name: str) -> bool:
         if key.split("@")[0] == name:
             return True
     return False
+
+
+def get_plugin_install_path(name: str) -> Path | None:
+    """Get the install path for an installed plugin by name.
+
+    Returns:
+        Path to the plugin's install directory, or None if not installed.
+    """
+    for key, entries in get_installed_plugins().items():
+        if key.split("@")[0] == name and entries:
+            return Path(entries[0].get("installPath", ""))
+    return None
+
+
+def get_plugin_skills(name: str) -> list[str]:
+    """Discover skill names for an installed plugin by scanning its skills directory.
+
+    Returns:
+        List of skill directory names (e.g. ["setup", "deploy", "status"]).
+    """
+    install_path = get_plugin_install_path(name)
+    if not install_path:
+        return []
+    skills_dir = install_path / "skills"
+    if not skills_dir.is_dir():
+        return []
+    return sorted(
+        d.name for d in skills_dir.iterdir()
+        if d.is_dir() and (d / "SKILL.md").exists()
+    )

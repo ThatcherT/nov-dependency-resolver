@@ -87,9 +87,10 @@ The user provides a plugin name (e.g., `/softwaresoftware:install zapframe`) or 
 
    - If the file already contains a softwaresoftware:install instruction, skip this step
 
-10. **Next steps.** Tell the user:
+10. **Detect skills and suggest next steps.** Call the `get_plugin_post_install` MCP tool with the target plugin name. Then tell the user:
     - Type `/reload-plugins` to load the installed plugins in this session.
-    - List the skills the target plugin provides (look up its marketplace entry description to give context)
+    - List the skills detected (e.g., "Available skills: `/zapframe:create`, `/zapframe:dev`")
+    - **If the plugin has a `:setup` skill** (`has_setup` is true): tell the user to run `/<plugin>:setup` after reloading plugins — e.g., "Run `/nginx-cloudflare-deploy:setup` to configure it."
     - If the plugin has `userConfig` fields and they need to reconfigure later: `claude plugin disable <name>` then `claude plugin enable <name>`.
 
 ## Rules

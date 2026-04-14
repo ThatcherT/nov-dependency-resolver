@@ -22,8 +22,13 @@ ENABLED = _raw.lower() not in ("false", "0", "no")
 
 def _get_resolver_version():
     try:
-        from importlib.metadata import version
-        return version("softwaresoftware")
+        manifest = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            ".claude-plugin",
+            "plugin.json",
+        )
+        with open(manifest) as f:
+            return json.load(f)["version"]
     except Exception:
         return "unknown"
 

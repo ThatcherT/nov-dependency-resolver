@@ -31,7 +31,7 @@ Optional setting name (e.g., `/softwaresoftware:config telemetry`). If omitted, 
 3. **To change a setting**, tell the user:
    - Run `claude plugin disable softwaresoftware` then `claude plugin enable softwaresoftware`
    - Claude Code will re-prompt for all userConfig values during enable
-   - Then `/exit` and restart to apply
+   - Then `/reload-plugins` to apply
 
 ## Rules
 

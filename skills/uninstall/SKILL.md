@@ -41,7 +41,7 @@ The user provides a plugin name (e.g., `/softwaresoftware:uninstall liteframe`).
 6. **Verify.** Run `claude plugin list` and confirm all removed plugins no longer appear. Report success or any discrepancies.
 
 7. **Next steps.** Tell the user:
-   - Type `/exit` to quit, then start a new `claude` session to fully unload the removed plugins.
+   - Type `/reload-plugins` to unload the removed plugins from this session.
 
 ## Rules
 

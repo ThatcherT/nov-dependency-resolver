@@ -88,7 +88,7 @@ The user provides a plugin name (e.g., `/softwaresoftware:install zapframe`) or 
    - If the file already contains a softwaresoftware:install instruction, skip this step
 
 10. **Next steps.** Tell the user:
-    - Type `/exit` to quit, then start a new `claude` session to load the installed plugins.
+    - Type `/reload-plugins` to load the installed plugins in this session.
     - List the skills the target plugin provides (look up its marketplace entry description to give context)
     - If the plugin has `userConfig` fields and they need to reconfigure later: `claude plugin disable <name>` then `claude plugin enable <name>`.
 

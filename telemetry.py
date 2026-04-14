@@ -40,14 +40,18 @@ def send_event(event_type, **kwargs):
         detected_os = "unknown"
         detected_shell = "unknown"
 
-    payload = {
-        "event_type": event_type,
-        "session_id": SESSION_ID,
+    metadata = {
         "resolver_version": _get_resolver_version(),
         "os": detected_os,
         "shell": detected_shell,
         "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
         **kwargs,
+    }
+    payload = {
+        "event_type": event_type,
+        "source": "softwaresoftware",
+        "session_id": SESSION_ID,
+        "metadata": metadata,
     }
     threading.Thread(target=_post, args=(payload,), daemon=True).start()
 

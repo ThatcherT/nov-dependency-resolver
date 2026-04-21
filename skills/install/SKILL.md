@@ -14,6 +14,8 @@ The user provides a plugin name (e.g., `/softwaresoftware:install zapframe`) or 
 
 ## Workflow
 
+0. **Load the softwaresoftware MCP tool schemas.** If `list_marketplace_plugins`, `get_install_plan`, `get_plugin_post_install`, or `get_uninstall_plan` are listed as deferred tools in your environment, load their schemas via ToolSearch before calling them. Example query: `select:mcp__softwaresoftware__list_marketplace_plugins,mcp__softwaresoftware__get_install_plan,mcp__softwaresoftware__get_plugin_post_install,mcp__softwaresoftware__get_uninstall_plan` (the exact tool name prefix varies — use whatever prefix the deferred-tool list shows). If ToolSearch reports the tools are unavailable, the installer's MCP server isn't loaded — tell the user to run `/reload-plugins` and retry, then stop.
+
 1. **Check for a plugin name.** If no argument was provided, or the argument doesn't match any plugin in any marketplace:
    - Call the `list_marketplace_plugins` MCP tool (no arguments — lists all marketplaces)
    - Show available plugins as a markdown table:
@@ -93,7 +95,7 @@ The user provides a plugin name (e.g., `/softwaresoftware:install zapframe`) or 
     - Type `/reload-plugins` to load the installed plugins in this session.
     - List the skills detected (e.g., "Available skills: `/zapframe:create`, `/zapframe:dev`")
     - **If the plugin has a `:setup` skill** (`has_setup` is true): tell the user to run `/<plugin>:setup` after reloading plugins — e.g., "Run `/nginx-cloudflare-deploy:setup` to configure it."
-    - If the plugin has `userConfig` fields and they need to reconfigure later: `claude plugin disable <name>` then `claude plugin enable <name>`.
+    - If the plugin has `userConfig` fields and they need to reconfigure later: edit `~/.claude/settings.json` under `pluginConfigs.<plugin-name>.options.<field>` and then run `/reload-plugins`. (Claude Code does not re-prompt on `claude plugin disable`/`enable`, and there is no `claude plugin config` command.)
 
 ## Rules
 

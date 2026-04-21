@@ -55,30 +55,33 @@ class TestMarketplaceTopLevel:
 
 
 class TestPluginSource:
-    """Source field must always be {"source": "github", "repo": "owner/repo"}.
+    """Source field must be {"source": "url", "url": "https://..."}.
 
-    Claude Code validates this field and rejects non-github source types.
-    The old "source": "registry" format is not supported.
+    The `github` shorthand is rejected because Claude Code clones it via SSH,
+    which fails for users without GitHub SSH keys configured. Use the explicit
+    `url` source with an HTTPS URL so installs work with no auth.
     """
 
     def test_every_plugin_has_source(self, plugins):
         for p in plugins:
             assert "source" in p, f"Plugin '{p['name']}' missing 'source'"
 
-    def test_source_is_github(self, plugins):
+    def test_source_is_url(self, plugins):
         for p in plugins:
             source = p["source"]
-            assert source.get("source") == "github", (
+            assert source.get("source") == "url", (
                 f"Plugin '{p['name']}' has source type '{source.get('source')}' — "
-                f"must be 'github'. Claude Code rejects non-github source types."
+                f"must be 'url' with an explicit https URL. The 'github' shorthand "
+                f"clones via SSH and breaks for users without GitHub SSH keys."
             )
 
-    def test_source_has_repo(self, plugins):
+    def test_source_has_https_url(self, plugins):
         for p in plugins:
             source = p["source"]
-            assert "repo" in source, f"Plugin '{p['name']}' source missing 'repo'"
-            assert re.match(r"^[\w.-]+/[\w.-]+$", source["repo"]), (
-                f"Plugin '{p['name']}' has invalid repo format: '{source['repo']}'"
+            assert "url" in source, f"Plugin '{p['name']}' source missing 'url'"
+            assert source["url"].startswith("https://"), (
+                f"Plugin '{p['name']}' url must start with https:// "
+                f"(got: {source['url']!r}) — ssh URLs break for users without keys."
             )
 
     def test_no_registry_in_source(self, plugins):

@@ -56,7 +56,7 @@ def test_mcp_server_config(plugin_json):
 
 
 def test_author(plugin_json):
-    assert plugin_json["author"]["name"] == "Thatcher"
+    assert plugin_json["author"]["name"] == "NOV LLC"
 
 
 # --- userConfig schema validation (added to prevent regressions like the

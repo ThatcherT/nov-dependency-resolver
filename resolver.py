@@ -217,6 +217,7 @@ def resolve(capability: str, marketplace: str = "softwaresoftware-plugins") -> l
             "match_details": match_details,
             "installed": registry.is_plugin_installed(provider["name"]),
             "external": provider.get("external", False),
+            "registry": provider.get("registry"),
             "source": provider.get("source", {}),
         })
 
@@ -348,7 +349,20 @@ def get_install_plan(plugin_name: str, marketplace: str | None = None) -> dict:
                     }
                     if best.get("external"):
                         entry["external"] = True
-                        entry["registry"] = best.get("registry", "claude-plugins-official")
+                        entry["registry"] = best.get("registry") or "claude-plugins-official"
+                    alternatives = []
+                    for alt in matched[1:]:
+                        alt_entry = {
+                            "plugin": alt["name"],
+                            "description": alt.get("description", ""),
+                            "version": alt.get("version", ""),
+                        }
+                        if alt.get("external"):
+                            alt_entry["external"] = True
+                            alt_entry["registry"] = alt.get("registry") or "claude-plugins-official"
+                        alternatives.append(alt_entry)
+                    if alternatives:
+                        entry["alternatives"] = alternatives
                     install_order.append(entry)
             elif not any(p["installed"] for p in providers):
                 # Check if a known third-party MCP could satisfy this

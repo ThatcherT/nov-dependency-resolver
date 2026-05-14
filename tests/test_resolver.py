@@ -1,5 +1,7 @@
 """Tests for resolver.py — dependency diff engine."""
 
+import json
+
 import resolver
 
 
@@ -162,6 +164,88 @@ def test_install_plan_external_has_registry(mock_home, marketplace_json_with_ext
     assert "external_registries" in plan
     assert "claude-plugins-official" in plan["external_registries"]
     assert plan["external_registries"]["claude-plugins-official"]["repo"] == "anthropics/claude-plugins-official"
+
+
+def test_install_plan_surfaces_alternatives(mock_home, marketplace_json_with_external, monkeypatch):
+    """When multiple providers match the environment, install_order entry lists the others as alternatives."""
+    import probes
+    # Both local-browser (os: darwin) and ext-playwright (binary: npx) match
+    monkeypatch.setattr(probes, "probe_os", lambda: "darwin")
+    monkeypatch.setattr(probes, "probe_binary", lambda name: name == "npx")
+
+    plan = resolver.get_install_plan("test-needs-browser")
+    browser_entry = next(
+        e for e in plan["install_order"] if e["capability"] == "browser-automation"
+    )
+    # Local wins (sort: local before external), and external is surfaced as alternative
+    assert browser_entry["plugin"] == "local-browser"
+    assert "alternatives" in browser_entry
+    alt_names = [a["plugin"] for a in browser_entry["alternatives"]]
+    assert "ext-playwright" in alt_names
+    ext_alt = next(a for a in browser_entry["alternatives"] if a["plugin"] == "ext-playwright")
+    assert ext_alt["external"] is True
+    assert ext_alt["registry"] == "claude-plugins-official"
+
+
+def test_install_plan_no_alternatives_when_single_match(mock_home, marketplace_json_with_external, monkeypatch):
+    """When only one provider matches the environment, no alternatives field is emitted."""
+    import probes
+    # Only ext-playwright matches (linux + npx); local-browser needs darwin
+    monkeypatch.setattr(probes, "probe_os", lambda: "linux")
+    monkeypatch.setattr(probes, "probe_binary", lambda name: name == "npx")
+
+    plan = resolver.get_install_plan("test-needs-browser")
+    browser_entry = next(
+        e for e in plan["install_order"] if e["capability"] == "browser-automation"
+    )
+    assert browser_entry["plugin"] == "ext-playwright"
+    assert "alternatives" not in browser_entry
+
+
+def test_install_plan_alternative_external_routes_to_correct_registry(mock_home, monkeypatch):
+    """Alternative external providers must carry their own registry, not default to claude-plugins-official."""
+    import probes
+    mp_path = mock_home / ".claude" / "plugins" / "marketplaces" / "softwaresoftware-plugins" / ".claude-plugin" / "marketplace.json"
+    mp_path.parent.mkdir(parents=True, exist_ok=True)
+    mp_path.write_text(json.dumps({
+        "name": "softwaresoftware-plugins",
+        "plugins": [
+            {
+                "name": "consumer",
+                "source": {"source": "github", "repo": "x/consumer"},
+                "requires": ["kb"],
+                "optional": [],
+                "provides": [],
+                "environment": {},
+            },
+            {
+                "name": "local-kb",
+                "source": {"source": "github", "repo": "x/local-kb"},
+                "requires": [], "optional": [],
+                "provides": ["kb"],
+                "environment": {"binary": "git"},
+            },
+            {
+                "name": "third-party-kb",
+                "source": {"source": "url", "url": "https://github.com/other/other-marketplace.git"},
+                "registry": "other-marketplace",
+                "requires": [], "optional": [],
+                "provides": ["kb"],
+                "environment": {"binary": "git"},
+                "external": True,
+            },
+        ],
+        "external_registries": {
+            "other-marketplace": {"repo": "other/other-marketplace", "description": "Other"}
+        },
+    }))
+    monkeypatch.setattr(probes, "probe_binary", lambda name: name == "git")
+
+    plan = resolver.get_install_plan("consumer")
+    kb_entry = next(e for e in plan["install_order"] if e["capability"] == "kb")
+    assert kb_entry["plugin"] == "local-kb"
+    alt = next(a for a in kb_entry["alternatives"] if a["plugin"] == "third-party-kb")
+    assert alt["registry"] == "other-marketplace"
 
 
 def test_get_install_plan_transitive_no_duplicates(mock_home, marketplace_json, monkeypatch):

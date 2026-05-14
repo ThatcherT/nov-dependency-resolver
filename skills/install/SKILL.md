@@ -59,7 +59,22 @@ The user provides a plugin name (e.g., `/softwaresoftware:install zapframe`) or 
    - The target plugin is the last row, unless `target_installed` is true
    - Include a one-line summary below the table (e.g., "2 to install (1 external), 1 already satisfied")
 
-5. **Ask for confirmation.** Wait for explicit user approval before installing anything.
+   **After the table, surface alternative providers.** For any `install_order` entry that has an `alternatives` array, render a short "Alternative providers" section so the user knows they can opt into a different implementation. Format:
+
+   ```
+   ### Alternative providers
+
+   - **knowledge-base** is being provided by `knowledge-base`. Alternatives matching your environment:
+     - `hive-mind` (external — `arctype-plugins`): Obsidian-based shared knowledge vault for teams... — opt in with `/softwaresoftware:install hive-mind` before running this install.
+   ```
+
+   Rules:
+   - Only show alternates that actually match the user's environment (the resolver already filters non-matching ones out of `alternatives`).
+   - Show each alternate's name, external-registry tag if applicable, and one-line description (truncate at ~120 chars).
+   - Tell the user to install the alternate **first** (`/softwaresoftware:install <alt-name>`) and then re-run the original install — once the alternate is installed, the resolver marks the capability satisfied and uses it instead of the local default.
+   - Skip the section entirely if no entry in `install_order` has alternatives.
+
+5. **Ask for confirmation.** Wait for explicit user approval before installing anything. If alternatives were shown, the user may choose to abort and install one of them first instead.
 
 6. **Ensure external registries are configured.** If the install plan includes `external_registries`, check that each is available:
    - Run `claude plugin marketplace list` and parse the output

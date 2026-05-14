@@ -59,20 +59,31 @@ The user provides a plugin name (e.g., `/softwaresoftware:install zapframe`) or 
    - The target plugin is the last row, unless `target_installed` is true
    - Include a one-line summary below the table (e.g., "2 to install (1 external), 1 already satisfied")
 
-   **After the table, surface alternative providers.** For any `install_order` entry that has an `alternatives` array, render a short "Alternative providers" section so the user knows they can opt into a different implementation. Format:
+   **After the table, surface alternative providers.** For any `install_order` entry that has an `alternatives` array, render a short "Alternative providers" section so the user knows they can opt into a different implementation. Each alternative has a `ready` flag:
+
+   - `ready: true` → the alternate matches the user's environment and can be installed right now.
+   - `ready: false` → the alternate exists in the marketplace but its env probes don't pass yet (e.g. a missing binary). Surface it anyway with the unmet probes from `unmet_probes`, so the user knows what setup it needs.
+
+   Format:
 
    ```
    ### Alternative providers
 
-   - **knowledge-base** is being provided by `knowledge-base`. Alternatives matching your environment:
-     - `hive-mind` (external — `arctype-plugins`): Obsidian-based shared knowledge vault for teams... — opt in with `/softwaresoftware:install hive-mind` before running this install.
+   For **knowledge-base** (selected: `knowledge-base`):
+
+   Ready to use:
+   - `some-other-kb` — local provider. Opt in: `/softwaresoftware:install some-other-kb` first.
+
+   Available with setup:
+   - `hive-mind` (external — `arctype-plugins`): Obsidian-based shared knowledge vault for teams with qmd-powered search. Needs: `binary:qmd`. Opt in: install qmd, then `/softwaresoftware:install hive-mind`.
    ```
 
    Rules:
-   - Only show alternates that actually match the user's environment (the resolver already filters non-matching ones out of `alternatives`).
+   - Split alternatives into "Ready to use" (`ready: true`) and "Available with setup" (`ready: false`). Omit either subsection if its bucket is empty.
    - Show each alternate's name, external-registry tag if applicable, and one-line description (truncate at ~120 chars).
+   - For `ready: false`, list the `unmet_probes` verbatim and give a concrete setup hint when one is obvious (e.g. install the missing binary).
    - Tell the user to install the alternate **first** (`/softwaresoftware:install <alt-name>`) and then re-run the original install — once the alternate is installed, the resolver marks the capability satisfied and uses it instead of the local default.
-   - Skip the section entirely if no entry in `install_order` has alternatives.
+   - Skip the whole section entirely if no entry in `install_order` has alternatives.
 
 5. **Ask for confirmation.** Wait for explicit user approval before installing anything. If alternatives were shown, the user may choose to abort and install one of them first instead.
 

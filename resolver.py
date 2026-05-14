@@ -351,11 +351,29 @@ def get_install_plan(plugin_name: str, marketplace: str | None = None) -> dict:
                         entry["external"] = True
                         entry["registry"] = best.get("registry") or "claude-plugins-official"
                     alternatives = []
+                    # Other matched providers: ready to use today
                     for alt in matched[1:]:
                         alt_entry = {
                             "plugin": alt["name"],
                             "description": alt.get("description", ""),
                             "version": alt.get("version", ""),
+                            "ready": True,
+                        }
+                        if alt.get("external"):
+                            alt_entry["external"] = True
+                            alt_entry["registry"] = alt.get("registry") or "claude-plugins-official"
+                        alternatives.append(alt_entry)
+                    # Providers whose env doesn't yet match: opt-in surface with setup hint
+                    for alt in providers:
+                        if alt["name"] == best["name"] or alt["installed"] or alt["match"]:
+                            continue
+                        unmet = sorted(k for k, v in alt.get("match_details", {}).items() if not v)
+                        alt_entry = {
+                            "plugin": alt["name"],
+                            "description": alt.get("description", ""),
+                            "version": alt.get("version", ""),
+                            "ready": False,
+                            "unmet_probes": unmet,
                         }
                         if alt.get("external"):
                             alt_entry["external"] = True

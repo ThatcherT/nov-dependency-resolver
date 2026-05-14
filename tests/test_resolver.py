@@ -167,7 +167,7 @@ def test_install_plan_external_has_registry(mock_home, marketplace_json_with_ext
 
 
 def test_install_plan_surfaces_alternatives(mock_home, marketplace_json_with_external, monkeypatch):
-    """When multiple providers match the environment, install_order entry lists the others as alternatives."""
+    """When multiple providers match the environment, install_order entry lists the others as alternatives with ready=True."""
     import probes
     # Both local-browser (os: darwin) and ext-playwright (binary: npx) match
     monkeypatch.setattr(probes, "probe_os", lambda: "darwin")
@@ -185,21 +185,46 @@ def test_install_plan_surfaces_alternatives(mock_home, marketplace_json_with_ext
     ext_alt = next(a for a in browser_entry["alternatives"] if a["plugin"] == "ext-playwright")
     assert ext_alt["external"] is True
     assert ext_alt["registry"] == "claude-plugins-official"
+    assert ext_alt["ready"] is True
 
 
-def test_install_plan_no_alternatives_when_single_match(mock_home, marketplace_json_with_external, monkeypatch):
-    """When only one provider matches the environment, no alternatives field is emitted."""
+def test_install_plan_surfaces_unmet_alternatives(mock_home, marketplace_json_with_external, monkeypatch):
+    """Providers whose env probes don't pass are still surfaced as ready=False alternatives with unmet probes."""
     import probes
-    # Only ext-playwright matches (linux + npx); local-browser needs darwin
-    monkeypatch.setattr(probes, "probe_os", lambda: "linux")
-    monkeypatch.setattr(probes, "probe_binary", lambda name: name == "npx")
+    # Only local-browser matches (darwin); ext-playwright needs npx which is missing
+    monkeypatch.setattr(probes, "probe_os", lambda: "darwin")
+    monkeypatch.setattr(probes, "probe_binary", lambda name: False)
 
     plan = resolver.get_install_plan("test-needs-browser")
     browser_entry = next(
         e for e in plan["install_order"] if e["capability"] == "browser-automation"
     )
-    assert browser_entry["plugin"] == "ext-playwright"
-    assert "alternatives" not in browser_entry
+    assert browser_entry["plugin"] == "local-browser"
+    assert "alternatives" in browser_entry
+    ext_alt = next(a for a in browser_entry["alternatives"] if a["plugin"] == "ext-playwright")
+    assert ext_alt["ready"] is False
+    assert "binary:npx" in ext_alt["unmet_probes"]
+    assert ext_alt["external"] is True
+    assert ext_alt["registry"] == "claude-plugins-official"
+
+
+def test_install_plan_no_alternatives_when_single_provider(mock_home, monkeypatch):
+    """When only one provider exists for a capability, no alternatives field is emitted."""
+    import probes
+    import json as _json
+    mp_path = mock_home / ".claude" / "plugins" / "marketplaces" / "softwaresoftware-plugins" / ".claude-plugin" / "marketplace.json"
+    mp_path.parent.mkdir(parents=True, exist_ok=True)
+    mp_path.write_text(_json.dumps({
+        "name": "softwaresoftware-plugins",
+        "plugins": [
+            {"name": "consumer", "requires": ["solo"], "optional": [], "provides": [], "environment": {}},
+            {"name": "only-provider", "requires": [], "optional": [], "provides": ["solo"], "environment": {}},
+        ],
+    }))
+    plan = resolver.get_install_plan("consumer")
+    entry = next(e for e in plan["install_order"] if e["capability"] == "solo")
+    assert entry["plugin"] == "only-provider"
+    assert "alternatives" not in entry
 
 
 def test_install_plan_alternative_external_routes_to_correct_registry(mock_home, monkeypatch):

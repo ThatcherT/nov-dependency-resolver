@@ -321,6 +321,13 @@ def get_install_plan(plugin_name: str, marketplace: str | None = None) -> dict:
                 continue
 
             providers = resolve(cap, resolved_marketplace)
+            # An installed provider already satisfies this capability — don't recommend a new install.
+            # check_dependencies handles the top-level plugin's requires/optional; this catches
+            # transitive deps where an installed provider for a sub-capability would otherwise be
+            # filtered out of `matched` (which excludes installed=True) and silently overridden.
+            if any(p["installed"] and p["match"] for p in providers):
+                already_satisfied.append(cap)
+                continue
             matched = [p for p in providers if p["match"] and not p["installed"]]
 
             if matched:

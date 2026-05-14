@@ -166,6 +166,56 @@ def test_install_plan_external_has_registry(mock_home, marketplace_json_with_ext
     assert plan["external_registries"]["claude-plugins-official"]["repo"] == "anthropics/claude-plugins-official"
 
 
+def test_transitive_optional_skips_already_installed_provider(mock_home, monkeypatch):
+    """When a provider's transitive optional dep is already satisfied by an installed plugin,
+    don't recommend a new external install. Regression: was suggesting deploy-on-aws
+    even though nginx-cloudflare-deploy was already installed."""
+    import probes
+    mp_path = mock_home / ".claude" / "plugins" / "marketplaces" / "softwaresoftware-plugins" / ".claude-plugin" / "marketplace.json"
+    mp_path.parent.mkdir(parents=True, exist_ok=True)
+    mp_path.write_text(json.dumps({
+        "name": "softwaresoftware-plugins",
+        "plugins": [
+            {"name": "app", "requires": ["routing"], "optional": [], "provides": [], "environment": {}},
+            {"name": "router-with-optional-deploy", "requires": [], "optional": ["deploy"],
+             "provides": ["routing"], "environment": {}},
+            {"name": "local-deploy", "requires": [], "optional": [],
+             "provides": ["deploy"], "environment": {"binary": "nginx"}},
+            {"name": "external-deploy",
+             "source": {"source": "url", "url": "https://github.com/x/y.git"},
+             "registry": "other",
+             "requires": [], "optional": [],
+             "provides": ["deploy"], "environment": {"binary": "awscli"},
+             "external": True},
+        ],
+        "external_registries": {"other": {"repo": "x/y"}},
+    }))
+    # local-deploy is already installed
+    installed_path = mock_home / ".claude" / "plugins" / "cache" / "softwaresoftware-plugins" / "local-deploy" / "1.0.0"
+    installed_path.mkdir(parents=True)
+    (installed_path / ".claude-plugin").mkdir()
+    (installed_path / ".claude-plugin" / "plugin.json").write_text(
+        json.dumps({"name": "local-deploy", "version": "1.0.0"}))
+    inst_idx = mock_home / ".claude" / "plugins" / "installed_plugins.json"
+    inst_idx.write_text(json.dumps({
+        "version": 2,
+        "plugins": {
+            "local-deploy@softwaresoftware-plugins": [
+                {"scope": "user", "installPath": str(installed_path), "version": "1.0.0"}
+            ]
+        },
+    }))
+    # Both local-deploy (nginx) and external-deploy (awscli) match env
+    monkeypatch.setattr(probes, "probe_binary", lambda name: name in ("nginx", "awscli"))
+
+    plan = resolver.get_install_plan("app")
+    plugins_to_install = [e["plugin"] for e in plan["install_order"]]
+    assert "external-deploy" not in plugins_to_install, (
+        "Should not recommend installing external-deploy when local-deploy is already installed"
+    )
+    assert "deploy" in plan["already_satisfied"]
+
+
 def test_install_plan_surfaces_alternatives(mock_home, marketplace_json_with_external, monkeypatch):
     """When multiple providers match the environment, install_order entry lists the others as alternatives with ready=True."""
     import probes

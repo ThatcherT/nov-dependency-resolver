@@ -245,7 +245,12 @@ def get_install_plan(plugin_name: str, marketplace: str | None = None) -> dict:
                 with "ready" (bool — environment probes pass) and, when not ready,
                 "unmet_probes" (list[str] — probe keys that failed).
             "already_satisfied": list[str],
-            "no_provider_available": list[str],  — capabilities with no matching provider
+            "no_provider_available": list[dict],  — capabilities with no usable provider.
+                Each entry: {"capability": str, "required": bool, "providers": list[dict]}.
+                Each provider: {"plugin", "description", "unmet_probes": list[str]}.
+                A provider blocked only on a "binary:<name>" probe is fixable (install
+                the binary); one blocked on "os" is not. An empty "providers" list means
+                no provider plugin exists for the capability at all.
             "marketplace": str,  — source marketplace
         }
     """
@@ -408,8 +413,28 @@ def get_install_plan(plugin_name: str, marketplace: str | None = None) -> dict:
                             "install_command": best_mcp["install_command"],
                             "description": best_mcp["description"],
                         })
-                elif cap not in no_provider:
-                    no_provider.append(cap)
+                elif not any(e["capability"] == cap for e in no_provider):
+                    # No usable provider. Record WHY — which providers exist
+                    # and which environment probes they failed — so the install
+                    # skill can offer remediation (e.g. "install tmux") instead
+                    # of a dead-end "no provider available" message. A provider
+                    # blocked only on a `binary:` probe is fixable; one blocked
+                    # on `os` is not.
+                    failed_providers = []
+                    for p in providers:
+                        unmet = sorted(
+                            k for k, v in p.get("match_details", {}).items() if not v
+                        )
+                        failed_providers.append({
+                            "plugin": p["name"],
+                            "description": p.get("description", ""),
+                            "unmet_probes": unmet,
+                        })
+                    no_provider.append({
+                        "capability": cap,
+                        "required": cap in required_caps,
+                        "providers": failed_providers,
+                    })
 
     required_set = set(deps["missing"])
     _resolve_caps(deps["missing"] + deps["optional_missing"], required_set)
@@ -464,7 +489,7 @@ def get_install_plan(plugin_name: str, marketplace: str | None = None) -> dict:
         plugin_name=plugin_name,
         providers_selected=[i["plugin"] for i in install_order],
         capabilities_satisfied=already_satisfied,
-        capabilities_missing=no_provider,
+        capabilities_missing=[e["capability"] for e in no_provider],
         duration_ms=duration_ms,
     )
     return result

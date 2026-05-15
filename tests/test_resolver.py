@@ -572,3 +572,36 @@ def test_get_plugin_skills_not_installed(mock_home, marketplace_json):
     assert registry.get_plugin_skills("not-installed") == []
 
 
+
+def test_no_provider_records_unmet_binary_probe(mock_home, monkeypatch):
+    """When a capability's only provider fails a binary probe, no_provider_available
+    records the provider and the unmet probe so the install skill can offer to
+    install the missing binary instead of dead-ending."""
+    import probes
+    mp_path = mock_home / ".claude" / "plugins" / "marketplaces" / "softwaresoftware-plugins" / ".claude-plugin" / "marketplace.json"
+    mp_path.parent.mkdir(parents=True, exist_ok=True)
+    mp_path.write_text(json.dumps({
+        "name": "softwaresoftware-plugins",
+        "plugins": [
+            {"name": "app", "requires": ["agent-spawning"], "optional": [],
+             "provides": [], "environment": {}},
+            {"name": "spawner", "requires": [], "optional": [],
+             "provides": ["agent-spawning"],
+             "environment": {"os": ["linux", "darwin"], "binary": "tmux"}},
+        ],
+    }))
+    # OS matches, but tmux is not installed.
+    monkeypatch.setattr(probes, "probe_os", lambda: "linux")
+    monkeypatch.setattr(probes, "probe_binary", lambda name: False)
+
+    plan = resolver.get_install_plan("app")
+    assert len(plan["no_provider_available"]) == 1
+    entry = plan["no_provider_available"][0]
+    assert entry["capability"] == "agent-spawning"
+    assert entry["required"] is True
+    assert len(entry["providers"]) == 1
+    prov = entry["providers"][0]
+    assert prov["plugin"] == "spawner"
+    assert "binary:tmux" in prov["unmet_probes"]
+    # The OS probe passed, so it must NOT appear as unmet.
+    assert "os" not in prov["unmet_probes"]

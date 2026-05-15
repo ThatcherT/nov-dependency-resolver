@@ -74,8 +74,8 @@ When a consumer plugin is installed via `/softwaresoftware:install`:
 3. **Check installed** — for each remaining capability, check if an installed plugin already provides it.
 4. **Find candidates** — for unmet capabilities, find all marketplace plugins that `provides` it.
 5. **Probe environment** — run the environment probes for each candidate. Only candidates where all conditions pass are considered.
-6. **Rank and select** — candidates are sorted: environment match first, local (same marketplace) before external, already-installed before not. The top candidate is selected.
-7. **Recurse** — the selected provider may itself have `requires`/`optional`, so the resolver recurses.
+6. **Rank and select** — candidates are sorted: environment match first, local (same marketplace) before external, already-installed before not. The top candidate is selected for install; the remaining candidates are attached to the install-plan entry as `alternatives` so the install skill can present them. Each alternative is flagged `ready: true` (its environment probes pass — installable now) or `ready: false` (it exists but needs setup — the unmet probe keys are listed in `unmet_probes`). This is how an opt-in provider stays discoverable even before its prerequisites are met.
+7. **Recurse** — the selected provider may itself have `requires`/`optional`, so the resolver recurses. Recursion re-applies the installed-provider and loaded-MCP checks (steps 2–3): a transitive capability already satisfied by an installed plugin is marked satisfied, never re-installed.
 8. **Topological order** — the final install plan lists dependencies before dependents.
 
 ### What happens when resolution fails
@@ -208,6 +208,9 @@ Avoid verb forms (`notify`, `automate-browser`) and implementation details (`tmu
 | `human-approval` | approval-channel | optional: channel |
 | `memory` | agent-memory | -- |
 | `design-system` | softwaresoftware-design-system | -- |
+| `status-dashboard` | taskboard | binary: python3 |
+| `knowledge-base` | knowledge-base | binary: git |
+| `event-routing` | dispatcher | binary: python3, git |
 | `social-posting-reddit` | reddit-poster | -- |
 | `payment-information` | payment-vault | -- |
 | `address` | address-vault | -- |

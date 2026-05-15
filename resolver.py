@@ -240,7 +240,10 @@ def get_install_plan(plugin_name: str, marketplace: str | None = None) -> dict:
     Returns:
         {
             "plugin": str,
-            "install_order": list[dict],  — ordered list of what to install
+            "install_order": list[dict],  — ordered list of what to install. Each entry may
+                carry an "alternatives" list: other providers for the same capability, each
+                with "ready" (bool — environment probes pass) and, when not ready,
+                "unmet_probes" (list[str] — probe keys that failed).
             "already_satisfied": list[str],
             "no_provider_available": list[str],  — capabilities with no matching provider
             "marketplace": str,  — source marketplace

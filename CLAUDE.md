@@ -26,7 +26,7 @@ Plugin installer for Claude Code. Detects environment, resolves capabilities to 
 ## MCP Tools
 
 - `check_dependencies(plugin_name)` — what's satisfied/missing
-- `get_install_plan(plugin_name)` — ordered install list with auto-selected providers
+- `get_install_plan(plugin_name)` — ordered install list with auto-selected providers; each entry also carries `alternatives` (other providers for the same capability, flagged `ready`/`unmet_probes`) so the install skill can present opt-in choices
 
 ## Runtime satisfier lookup
 
